@@ -9,11 +9,15 @@ const bannerRoutes = require('./bannerRoutes');
 const categoryRoutes = require('./categoryRoutes');
 const productRoutes = require('./productRoutes');
 const storeconfigRoutes = require('./storeconfigRoutes');
+const cartRoutes = require('./cartRoutes');
+const orderRoutes = require('./orderRoutes');
 
 router.use('/', bannerRoutes); // /banners and /admin/banners
 router.use('/', categoryRoutes); // /categories and /admin/categories
 router.use('/', productRoutes); // /products and /admin/products
 router.use('/', storeconfigRoutes); // /storeconfig
+router.use('/cart', cartRoutes); // /cart
+router.use('/orders', orderRoutes); // /orders and /admin/orders
 
 router.use('/auth', authRoutes);
 router.use('/admin/users', userRoutes);

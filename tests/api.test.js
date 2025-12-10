@@ -5,15 +5,6 @@ const app = require('../src/app');
 const User = require('../src/models/User');
 const UserSession = require('../src/models/UserSession');
 
-// Mock Redis to avoid connection issues during tests
-jest.mock('../src/lib/redis', () => ({
-    status: 'ready',
-    get: jest.fn(),
-    set: jest.fn(),
-    del: jest.fn(),
-    on: jest.fn()
-}));
-
 describe('Auth & User API', () => {
     let adminToken;
     let userId;

@@ -5,17 +5,6 @@ const app = require('../src/app');
 const Category = require('../src/models/Category');
 const User = require('../src/models/User');
 
-// Mock Redis
-jest.mock('../src/lib/redis', () => ({
-    status: 'ready',
-    get: jest.fn(),
-    set: jest.fn(),
-    del: jest.fn(),
-    on: jest.fn()
-}));
-
-// Mock Banner Cache Service if used in app launch or tests implicitly (not needed directly here)
-
 describe('Category API', () => {
     let adminToken;
 

@@ -1,6 +1,5 @@
 const User = require('../models/User');
 const authService = require('../services/authService');
-const redis = require('../lib/redis');
 
 // @desc    Create User (Admin)
 // @route   POST /api/v1/admin/users
@@ -23,11 +22,6 @@ const createUser = async (req, res) => {
             password_hash,
             role: role || 'customer'
         });
-
-        // Invalidate Stats Cache
-        if (redis.status === 'ready') {
-            await redis.del('dashboard:stats');
-        }
 
         res.status(201).json({
             success: true,
@@ -118,11 +112,6 @@ const updateUser = async (req, res) => {
 
             const updatedUser = await user.save();
 
-            // Invalidate Stats Cache
-            if (redis.status === 'ready') {
-                await redis.del('dashboard:stats');
-            }
-
             res.json({
                 _id: updatedUser._id,
                 name: updatedUser.name,
@@ -150,11 +139,6 @@ const deleteUser = async (req, res) => {
             user.is_active = false;
             await user.save();
 
-            // Invalidate Stats Cache
-            if (redis.status === 'ready') {
-                await redis.del('dashboard:stats');
-            }
-
             res.json({ message: 'User deactivated' });
         } else {
             res.status(404).json({ message: 'User not found' });
@@ -170,21 +154,8 @@ const deleteUser = async (req, res) => {
 // @access  Private/Admin
 const getDashboardStats = async (req, res) => {
     try {
-        // Check Redis Cache
-        if (redis.status === 'ready') {
-            const cachedStats = await redis.get('dashboard:stats');
-            if (cachedStats) {
-                return res.json(JSON.parse(cachedStats));
-            }
-        }
-
         const tenant_id = req.query.tenant_id;
         const stats = await User.dashboardStats({ tenant_id });
-
-        // Save to Redis (TTL 60 seconds)
-        if (redis.status === 'ready') {
-            await redis.set('dashboard:stats', JSON.stringify(stats), 'EX', 60);
-        }
 
         res.json(stats);
     } catch (error) {

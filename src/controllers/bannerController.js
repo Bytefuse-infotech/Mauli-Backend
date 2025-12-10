@@ -1,5 +1,4 @@
 const Banner = require('../models/Banner');
-const bannerCacheService = require('../services/bannerCacheService');
 
 // @desc    Get Visible Banners (Public)
 // @route   GET /api/v1/banners/visible
@@ -7,17 +6,8 @@ const bannerCacheService = require('../services/bannerCacheService');
 // @access  Public
 const getVisibleBanners = async (req, res) => {
     try {
-        // 1. Try Cache
-        const cachedData = await bannerCacheService.getCachedVisibleBanners();
-        if (cachedData) {
-            return res.json(cachedData);
-        }
-
-        // 2. Fetch from DB
+        // Fetch from DB
         const banners = await Banner.findVisible().lean();
-
-        // 3. Cache Result
-        await bannerCacheService.cacheVisibleBanners(banners);
 
         res.json({
             banners,
@@ -62,9 +52,6 @@ const createBanner = async (req, res) => {
             priority,
             is_active
         });
-
-        // Invalidate Cache
-        await bannerCacheService.invalidateBannersCache();
 
         res.status(201).json({ success: true, data: banner });
     } catch (error) {
@@ -141,9 +128,6 @@ const updateBanner = async (req, res) => {
 
             const updatedBanner = await banner.save();
 
-            // Invalidate Cache
-            await bannerCacheService.invalidateBannersCache();
-
             res.json(updatedBanner);
         } else {
             res.status(404).json({ message: 'Banner not found' });
@@ -164,9 +148,6 @@ const deleteBanner = async (req, res) => {
         if (banner) {
             banner.is_active = false;
             await banner.save();
-
-            // Invalidate Cache
-            await bannerCacheService.invalidateBannersCache();
 
             res.json({ message: 'Banner removed (soft delete)' });
         } else {

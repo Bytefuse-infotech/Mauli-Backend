@@ -5,15 +5,6 @@ const app = require('../src/app');
 const Banner = require('../src/models/Banner');
 const User = require('../src/models/User');
 
-// Mock Redis
-jest.mock('../src/lib/redis', () => ({
-    status: 'ready',
-    get: jest.fn(),
-    set: jest.fn(),
-    del: jest.fn(),
-    on: jest.fn()
-}));
-
 describe('Banner API', () => {
     let adminToken;
     let bannerId;

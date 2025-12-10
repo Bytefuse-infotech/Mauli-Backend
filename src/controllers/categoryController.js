@@ -1,22 +1,12 @@
 const Category = require('../models/Category');
-const categoryCacheService = require('../services/categoryCacheService');
 
 // @desc    Get Active Categories (Public)
 // @route   GET /api/v1/categories
 // @access  Public
 const getActiveCategories = async (req, res) => {
     try {
-        // 1. Try Cache
-        const cachedData = await categoryCacheService.getCachedActiveCategories();
-        if (cachedData) {
-            return res.json(cachedData);
-        }
-
-        // 2. Fetch from DB
+        // Fetch from DB
         const categories = await Category.findActive().lean();
-
-        // 3. Cache Result
-        await categoryCacheService.cacheActiveCategories(categories);
 
         res.json({
             categories,
@@ -48,9 +38,6 @@ const createCategory = async (req, res) => {
             meta
         });
 
-        // Invalidate Cache
-        await categoryCacheService.invalidateCategoriesCache();
-
         res.status(201).json(category);
     } catch (error) {
         console.error(error);
@@ -79,9 +66,6 @@ const updateCategory = async (req, res) => {
             if (req.body.slug) category.slug = req.body.slug;
 
             const updatedCategory = await category.save();
-
-            // Invalidate Cache
-            await categoryCacheService.invalidateCategoriesCache();
 
             res.json(updatedCategory);
         } else {
@@ -131,9 +115,6 @@ const toggleCategory = async (req, res) => {
             category.is_active = !category.is_active;
             await category.save();
 
-            // Invalidate Cache
-            await categoryCacheService.invalidateCategoriesCache();
-
             res.json({ message: `Category ${category.is_active ? 'activated' : 'deactivated'}`, is_active: category.is_active });
         } else {
             res.status(404).json({ message: 'Category not found' });
@@ -153,9 +134,6 @@ const deleteCategory = async (req, res) => {
 
         if (category) {
             await Category.deleteOne({ _id: category._id });
-
-            // Invalidate Cache
-            await categoryCacheService.invalidateCategoriesCache();
 
             res.json({ message: 'Category removed' });
         } else {

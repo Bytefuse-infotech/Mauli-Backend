@@ -1,0 +1,1123 @@
+{
+	"info": {
+		"_postman_id": "mauli-marketing-api-collection",
+		"name": "Mauli Marketing API",
+		"description": "Complete API collection for Mauli Marketing e-commerce backend",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:5009/api/v1",
+			"type": "string"
+		},
+		{
+			"key": "access_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "refresh_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "user_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "product_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "category_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "order_id",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const jsonData = pm.response.json();",
+									"    pm.collectionVariables.set('access_token', jsonData.access_token);",
+									"    pm.collectionVariables.set('refresh_token', jsonData.refresh_token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						},
+						"description": "Login with email and password to get JWT tokens"
+					},
+					"response": []
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"had_order\": false\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/logout",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "logout"]
+						},
+						"description": "Logout and record session duration"
+					},
+					"response": []
+				},
+				{
+					"name": "Refresh Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const jsonData = pm.response.json();",
+									"    pm.collectionVariables.set('access_token', jsonData.access_token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/refresh",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "refresh"]
+						},
+						"description": "Refresh access token using refresh token"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Users (Admin)",
+			"item": [
+				{
+					"name": "Get All Users",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/users",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "users"]
+						},
+						"description": "Get list of all users (Admin/Manager only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Create User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"phone\": \"+911234567890\",\n  \"password\": \"password123\",\n  \"role\": \"customer\",\n  \"is_active\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/users",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "users"]
+						},
+						"description": "Create a new user (Admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Dashboard Stats",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/users/stats",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "users", "stats"]
+						},
+						"description": "Get user statistics for dashboard (Admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get User By ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/users/{{user_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "users", "{{user_id}}"]
+						},
+						"description": "Get specific user details (Admin/Manager)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update User",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"John Doe Updated\",\n  \"is_active\": true,\n  \"role\": \"customer\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/users/{{user_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "users", "{{user_id}}"]
+						},
+						"description": "Update user details (Admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete User",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/users/{{user_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "users", "{{user_id}}"]
+						},
+						"description": "Delete a user (Admin only)"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Sessions",
+			"item": [
+				{
+					"name": "Get My Sessions",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/me/sessions",
+							"host": ["{{base_url}}"],
+							"path": ["me", "sessions"]
+						},
+						"description": "Get current user's session history"
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Sessions (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/sessions",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "sessions"]
+						},
+						"description": "Get all sessions (Admin only)"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Banners",
+			"item": [
+				{
+					"name": "Get Visible Banners (Public)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/banners",
+							"host": ["{{base_url}}"],
+							"path": ["banners"]
+						},
+						"description": "Get all visible/active banners (public)"
+					},
+					"response": []
+				},
+				{
+					"name": "List All Banners (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/banners",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "banners"]
+						},
+						"description": "Get all banners including inactive (Admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Banner (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Summer Sale\",\n  \"image_url\": \"https://example.com/banner.jpg\",\n  \"link_url\": \"/products/summer-sale\",\n  \"is_visible\": true,\n  \"order_index\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/banners",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "banners"]
+						},
+						"description": "Create a new banner (Admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Banner (Admin)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Summer Sale - Updated\",\n  \"is_visible\": false,\n  \"order_index\": 2\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/banners/:id",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "banners", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						},
+						"description": "Update a banner (Admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Banner (Admin)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/banners/:id",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "banners", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						},
+						"description": "Delete a banner (Admin only)"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Categories",
+			"item": [
+				{
+					"name": "Get Active Categories (Public)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/categories",
+							"host": ["{{base_url}}"],
+							"path": ["categories"]
+						},
+						"description": "Get all active categories (public)"
+					},
+					"response": []
+				},
+				{
+					"name": "List All Categories (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/categories/all",
+							"host": ["{{base_url}}"],
+							"path": ["categories", "all"]
+						},
+						"description": "Get all categories including inactive (Admin/Manager)"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Category (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Electronics\",\n  \"description\": \"Electronic items and gadgets\",\n  \"image_url\": \"https://example.com/category.jpg\",\n  \"is_active\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/categories",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "categories"]
+						},
+						"description": "Create a new category (Admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Category (Admin)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Electronics Updated\",\n  \"description\": \"Updated description\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/categories/{{category_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "categories", "{{category_id}}"]
+						},
+						"description": "Update a category (Admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Toggle Category Status (Admin)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/categories/{{category_id}}/toggle",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "categories", "{{category_id}}", "toggle"]
+						},
+						"description": "Toggle category active/inactive (Admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Category (Admin)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/categories/{{category_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "categories", "{{category_id}}"]
+						},
+						"description": "Delete a category (Admin only)"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Products",
+			"item": [
+				{
+					"name": "List Products (Public)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/products?is_active=true&limit=20&page=1",
+							"host": ["{{base_url}}"],
+							"path": ["products"],
+							"query": [
+								{
+									"key": "is_active",
+									"value": "true",
+									"description": "Filter by active status"
+								},
+								{
+									"key": "limit",
+									"value": "20",
+									"description": "Number of products per page"
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Page number"
+								},
+								{
+									"key": "search",
+									"value": "",
+									"description": "Search by name/description",
+									"disabled": true
+								},
+								{
+									"key": "category_id",
+									"value": "",
+									"description": "Filter by category",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get list of products with pagination and filters"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Products By Category (Public)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/products/category/{{category_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["products", "category", "{{category_id}}"]
+						},
+						"description": "Get all products in a specific category"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Product By ID (Public)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/products/{{product_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["products", "{{product_id}}"]
+						},
+						"description": "Get a single product by ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Product (Admin)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const jsonData = pm.response.json();",
+									"    pm.collectionVariables.set('product_id', jsonData.data._id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Fresh Mangoes\",\n  \"price\": 250,\n  \"discount\": 20,\n  \"unit\": \"dozen\",\n  \"description\": \"Fresh Alphonso mangoes from Ratnagiri\",\n  \"images\": [\n    {\n      \"url\": \"https://example.com/mango1.jpg\",\n      \"order_index\": 0\n    },\n    {\n      \"url\": \"https://example.com/mango2.jpg\",\n      \"order_index\": 1\n    }\n  ],\n  \"is_active\": true,\n  \"category_id\": \"{{category_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/products",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "products"]
+						},
+						"description": "Create a new product with Joi validation (Admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Product (Admin)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Fresh Mangoes - Premium\",\n  \"price\": 300,\n  \"discount\": 30,\n  \"is_active\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/products/{{product_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "products", "{{product_id}}"]
+						},
+						"description": "Update a product (Admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Product (Admin)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/products/{{product_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "products", "{{product_id}}"]
+						},
+						"description": "Delete a product (Admin only)"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Store Config",
+			"item": [
+				{
+					"name": "Get Store Config (Public)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/storeconfig",
+							"host": ["{{base_url}}"],
+							"path": ["storeconfig"]
+						},
+						"description": "Get store configuration including delivery fee, discounts, and slots"
+					},
+					"response": []
+				},
+				{
+					"name": "Compute Cart Total",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"items\": [\n    {\n      \"product_id\": \"{{product_id}}\",\n      \"quantity\": 2,\n      \"unit\": \"dozen\",\n      \"price_at_add\": 250,\n      \"discount_at_add\": 20\n    }\n  ],\n  \"delivery_address\": {\n    \"latitude\": 18.5204,\n    \"longitude\": 73.8567\n  }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/storeconfig/compute",
+							"host": ["{{base_url}}"],
+							"path": ["storeconfig", "compute"]
+						},
+						"description": "Calculate cart totals with delivery fee and discounts"
+					},
+					"response": []
+				},
+				{
+					"name": "Reserve Delivery Slot",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"date\": \"2025-12-15\",\n  \"start_time\": \"09:00\",\n  \"end_time\": \"11:00\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/storeconfig/reserve-slot",
+							"host": ["{{base_url}}"],
+							"path": ["storeconfig", "reserve-slot"]
+						},
+						"description": "Reserve a delivery slot"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Store Config (Admin)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"store_address\": {\n    \"line1\": \"12 MG Road\",\n    \"city\": \"Pune\",\n    \"state\": \"Maharashtra\",\n    \"postal_code\": \"411001\",\n    \"country\": \"India\",\n    \"latitude\": 18.5204,\n    \"longitude\": 73.8567\n  },\n  \"delivery_fee\": {\n    \"type\": \"flat\",\n    \"base_fee\": 50,\n    \"rate\": 0\n  },\n  \"cart_discounts\": [\n    {\n      \"discount_type\": \"flat\",\n      \"min_cart_value\": 1000,\n      \"value\": 100,\n      \"priority\": 10\n    },\n    {\n      \"discount_type\": \"percentage\",\n      \"min_cart_value\": 2000,\n      \"value\": 10,\n      \"max_discount_amount\": 200,\n      \"priority\": 20\n    }\n  ],\n  \"delivery_slots\": [\n    {\n      \"date\": \"2025-12-15\",\n      \"slots\": [\n        {\n          \"start_time\": \"09:00\",\n          \"end_time\": \"11:00\",\n          \"capacity\": 10,\n          \"booked\": 0\n        },\n        {\n          \"start_time\": \"11:00\",\n          \"end_time\": \"13:00\",\n          \"capacity\": 10,\n          \"booked\": 0\n        }\n      ]\n    }\n  ],\n  \"is_delivery_enabled\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/storeconfig",
+							"host": ["{{base_url}}"],
+							"path": ["storeconfig"]
+						},
+						"description": "Update store configuration (Admin only)"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Cart",
+			"item": [
+				{
+					"name": "Get Cart",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/cart",
+							"host": ["{{base_url}}"],
+							"path": ["cart"]
+						},
+						"description": "Get current user's cart"
+					},
+					"response": []
+				},
+				{
+					"name": "Add to Cart",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"product_id\": \"{{product_id}}\",\n  \"quantity\": 2,\n  \"unit\": \"dozen\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/cart/items",
+							"host": ["{{base_url}}"],
+							"path": ["cart", "items"]
+						},
+						"description": "Add item to cart (fetches current price/discount)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Cart Item",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"quantity\": 5,\n  \"unit\": \"dozen\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/cart/items/{{product_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["cart", "items", "{{product_id}}"]
+						},
+						"description": "Update cart item quantity or unit"
+					},
+					"response": []
+				},
+				{
+					"name": "Remove from Cart",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/cart/items/{{product_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["cart", "items", "{{product_id}}"]
+						},
+						"description": "Remove specific item from cart"
+					},
+					"response": []
+				},
+				{
+					"name": "Clear Cart",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/cart",
+							"host": ["{{base_url}}"],
+							"path": ["cart"]
+						},
+						"description": "Clear all items from cart"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Orders",
+			"item": [
+				{
+					"name": "Create Order",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const jsonData = pm.response.json();",
+									"    pm.collectionVariables.set('order_id', jsonData.data._id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"delivery_address\": {\n    \"line1\": \"123 Main Street\",\n    \"line2\": \"Apartment 4B\",\n    \"city\": \"Pune\",\n    \"state\": \"Maharashtra\",\n    \"postal_code\": \"411001\",\n    \"latitude\": 18.5204,\n    \"longitude\": 73.8567\n  },\n  \"delivery_slot\": {\n    \"date\": \"2025-12-15\",\n    \"start_time\": \"09:00\",\n    \"end_time\": \"11:00\"\n  },\n  \"payment_method\": \"cod\",\n  \"notes\": \"Please call before delivery\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/orders",
+							"host": ["{{base_url}}"],
+							"path": ["orders"]
+						},
+						"description": "Create order from cart items"
+					},
+					"response": []
+				},
+				{
+					"name": "Get My Orders",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/orders",
+							"host": ["{{base_url}}"],
+							"path": ["orders"]
+						},
+						"description": "Get current user's orders"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Order By ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/orders/{{order_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["orders", "{{order_id}}"]
+						},
+						"description": "Get specific order details"
+					},
+					"response": []
+				},
+				{
+					"name": "Cancel Order",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/orders/{{order_id}}/cancel",
+							"host": ["{{base_url}}"],
+							"path": ["orders", "{{order_id}}", "cancel"]
+						},
+						"description": "Cancel an order (user can only cancel their own)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Orders (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/orders/admin/orders?status=pending&limit=20&page=1",
+							"host": ["{{base_url}}"],
+							"path": ["orders", "admin", "orders"],
+							"query": [
+								{
+									"key": "status",
+									"value": "pending",
+									"description": "Filter by order status",
+									"disabled": true
+								},
+								{
+									"key": "limit",
+									"value": "20",
+									"description": "Number of orders per page"
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Page number"
+								}
+							]
+						},
+						"description": "Get all orders with filters (Admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Order Status (Admin)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"confirmed\",\n  \"payment_status\": \"paid\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/orders/admin/orders/{{order_id}}/status",
+							"host": ["{{base_url}}"],
+							"path": ["orders", "admin", "orders", "{{order_id}}", "status"]
+						},
+						"description": "Update order status and payment status (Admin only)"
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

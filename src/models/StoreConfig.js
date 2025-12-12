@@ -83,7 +83,7 @@ const StoreConfigSchema = new mongoose.Schema({
 });
 
 // Index for tenant lookup
-StoreConfigSchema.index({ tenant_id: 1 });
+// StoreConfigSchema.index({ tenant_id: 1 }); // Duplicate
 
 // Static method to get or create config
 StoreConfigSchema.statics.getConfig = async function (tenant_id = null) {

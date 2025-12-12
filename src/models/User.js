@@ -102,8 +102,9 @@ const userSchema = new mongoose.Schema({
 });
 
 // Indexes
-userSchema.index({ role: 1, is_active: 1 });
-userSchema.index({ tenant_id: 1, is_active: 1 });
+// Removed duplicate indexes as they are defined in schema options
+// userSchema.index({ role: 1, is_active: 1 });
+// userSchema.index({ tenant_id: 1, is_active: 1 });
 
 // Instance Methods
 

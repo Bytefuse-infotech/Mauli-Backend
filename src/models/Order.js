@@ -126,7 +126,7 @@ const OrderSchema = new mongoose.Schema({
 
 // Indexes
 OrderSchema.index({ user_id: 1, createdAt: -1 });
-OrderSchema.index({ order_number: 1 });
+// OrderSchema.index({ order_number: 1 }); // Duplicate
 OrderSchema.index({ status: 1 });
 
 // Pre-save hook to generate order number

@@ -164,11 +164,31 @@ const getDashboardStats = async (req, res) => {
     }
 };
 
+// @desc    Get current user profile
+// @route   GET /api/v1/users/profile
+// @access  Private
+const getProfile = async (req, res) => {
+    try {
+        // req.user is set by protect middleware
+        const user = await User.findById(req.user._id).select('-password_hash').lean();
+
+        if (user) {
+            res.json(user);
+        } else {
+            res.status(404).json({ message: 'User not found' });
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
 module.exports = {
     createUser,
     getUsers,
     getUserById,
     updateUser,
     deleteUser,
-    getDashboardStats
+    getDashboardStats,
+    getProfile
 };

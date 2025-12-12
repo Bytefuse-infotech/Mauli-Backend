@@ -12,12 +12,15 @@ const storeconfigRoutes = require('./storeconfigRoutes');
 const cartRoutes = require('./cartRoutes');
 const orderRoutes = require('./orderRoutes');
 
+const contentRoutes = require('./contentRoutes');
+
 router.use('/', bannerRoutes); // /banners and /admin/banners
 router.use('/', categoryRoutes); // /categories and /admin/categories
 router.use('/', productRoutes); // /products and /admin/products
 router.use('/', storeconfigRoutes); // /storeconfig
 router.use('/cart', cartRoutes); // /cart
 router.use('/orders', orderRoutes); // /orders and /admin/orders
+router.use('/content', contentRoutes); // /content and /content/admin/:key
 
 router.use('/auth', authRoutes);
 router.use('/admin/users', userRoutes);

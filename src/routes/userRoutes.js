@@ -6,11 +6,15 @@ const {
     getUserById,
     updateUser,
     deleteUser,
-    getDashboardStats
+    getDashboardStats,
+    getProfile
 } = require('../controllers/userController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 router.use(protect);
+
+// router.get('/profile', getProfile); // Moved to pure profile route or auth
+// Removing the line I added previously to avoid /admin/users/profile
 router.use(authorize('admin', 'manager')); // Managers can view too, usually
 
 router.route('/')

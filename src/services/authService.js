@@ -47,11 +47,19 @@ const comparePassword = async (password, hash) => {
     return await bcrypt.compare(password, hash);
 };
 
+// Generate OTP
+const generateOtp = () => {
+    // For testing, always return 000000
+    return '000000';
+    // return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
 module.exports = {
     generateAccessToken,
     generateRefreshToken,
     verifyAccessToken,
     verifyRefreshToken,
     hashPassword,
-    comparePassword
+    comparePassword,
+    generateOtp
 };

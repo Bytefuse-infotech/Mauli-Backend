@@ -89,6 +89,13 @@ const userSchema = new mongoose.Schema({
         type: Map,
         of: String
         // Flexible key-value pairs
+    },
+    otp_hash: {
+        type: String,
+        select: false
+    },
+    otp_expires_at: {
+        type: Date
     }
 }, {
     timestamps: true

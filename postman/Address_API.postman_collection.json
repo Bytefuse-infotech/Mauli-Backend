@@ -1,0 +1,247 @@
+{
+    "info": {
+        "name": "Address Management API",
+        "description": "Complete CRUD operations for customer address management",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "auth": {
+        "type": "bearer",
+        "bearer": [
+            {
+                "key": "token",
+                "value": "{{jwt_token}}",
+                "type": "string"
+            }
+        ]
+    },
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://localhost:5000/api/v1",
+            "type": "string"
+        },
+        {
+            "key": "jwt_token",
+            "value": "YOUR_JWT_TOKEN_HERE",
+            "type": "string"
+        },
+        {
+            "key": "address_id",
+            "value": "",
+            "type": "string"
+        }
+    ],
+    "item": [
+        {
+            "name": "Get All Addresses",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/addresses",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "addresses"
+                    ]
+                },
+                "description": "Retrieve all active addresses for the logged-in customer"
+            },
+            "response": []
+        },
+        {
+            "name": "Get Single Address",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/addresses/{{address_id}}",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "addresses",
+                        "{{address_id}}"
+                    ]
+                },
+                "description": "Retrieve a specific address by ID"
+            },
+            "response": []
+        },
+        {
+            "name": "Get Default Address",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/addresses/default",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "addresses",
+                        "default"
+                    ]
+                },
+                "description": "Retrieve the default address for the logged-in customer"
+            },
+            "response": []
+        },
+        {
+            "name": "Create Address - Home",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "if (pm.response.code === 201) {",
+                            "    const response = pm.response.json();",
+                            "    pm.collectionVariables.set('address_id', response.data._id);",
+                            "}"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"label\": \"home\",\n  \"name\": \"John Doe\",\n  \"phone\": \"+919876543210\",\n  \"address_line1\": \"123 Main Street\",\n  \"address_line2\": \"Apartment 4B\",\n  \"landmark\": \"Near City Mall\",\n  \"city\": \"Mumbai\",\n  \"state\": \"Maharashtra\",\n  \"postal_code\": \"400001\",\n  \"country\": \"India\",\n  \"latitude\": 19.0760,\n  \"longitude\": 72.8777,\n  \"is_default\": true\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/addresses",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "addresses"
+                    ]
+                },
+                "description": "Create a new home address and set as default"
+            },
+            "response": []
+        },
+        {
+            "name": "Create Address - Work",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"label\": \"work\",\n  \"name\": \"John Doe\",\n  \"phone\": \"+919876543210\",\n  \"address_line1\": \"456 Business Park\",\n  \"address_line2\": \"Floor 5\",\n  \"landmark\": \"Opposite Metro Station\",\n  \"city\": \"Mumbai\",\n  \"state\": \"Maharashtra\",\n  \"postal_code\": \"400002\",\n  \"country\": \"India\",\n  \"latitude\": 19.0896,\n  \"longitude\": 72.8656,\n  \"is_default\": false\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/addresses",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "addresses"
+                    ]
+                },
+                "description": "Create a new work address"
+            },
+            "response": []
+        },
+        {
+            "name": "Update Address",
+            "request": {
+                "method": "PUT",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"phone\": \"+919876543211\",\n  \"landmark\": \"Near New Shopping Complex\",\n  \"address_line2\": \"Apartment 5C\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/addresses/{{address_id}}",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "addresses",
+                        "{{address_id}}"
+                    ]
+                },
+                "description": "Update an existing address (partial update supported)"
+            },
+            "response": []
+        },
+        {
+            "name": "Set Default Address",
+            "request": {
+                "method": "PATCH",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/addresses/{{address_id}}/set-default",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "addresses",
+                        "{{address_id}}",
+                        "set-default"
+                    ]
+                },
+                "description": "Set a specific address as the default address"
+            },
+            "response": []
+        },
+        {
+            "name": "Delete Address (Soft)",
+            "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/addresses/{{address_id}}",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "addresses",
+                        "{{address_id}}"
+                    ]
+                },
+                "description": "Soft delete an address (marks as inactive)"
+            },
+            "response": []
+        },
+        {
+            "name": "Delete Address (Permanent)",
+            "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/addresses/{{address_id}}/permanent",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "addresses",
+                        "{{address_id}}",
+                        "permanent"
+                    ]
+                },
+                "description": "Permanently delete an address from database"
+            },
+            "response": []
+        }
+    ]
+}

@@ -11,6 +11,7 @@ const productRoutes = require('./productRoutes');
 const storeconfigRoutes = require('./storeconfigRoutes');
 const cartRoutes = require('./cartRoutes');
 const orderRoutes = require('./orderRoutes');
+const addressRoutes = require('./addressRoutes');
 
 const contentRoutes = require('./contentRoutes');
 
@@ -20,6 +21,7 @@ router.use('/', productRoutes); // /products and /admin/products
 router.use('/', storeconfigRoutes); // /storeconfig
 router.use('/cart', cartRoutes); // /cart
 router.use('/orders', orderRoutes); // /orders and /admin/orders
+router.use('/addresses', addressRoutes); // /addresses
 router.use('/content', contentRoutes); // /content and /content/admin/:key
 
 router.use('/auth', authRoutes);

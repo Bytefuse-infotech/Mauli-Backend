@@ -1302,6 +1302,249 @@
 			]
 		},
 		{
+			"name": "Addresses (Customer)",
+			"item": [
+				{
+					"name": "Get All Addresses",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/addresses",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"addresses"
+							]
+						},
+						"description": "Get all active addresses for the logged-in customer"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Single Address",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/addresses/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"addresses",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						},
+						"description": "Get a specific address by ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Default Address",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/addresses/default",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"addresses",
+								"default"
+							]
+						},
+						"description": "Get the default address for the logged-in customer"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Address",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"label\": \"home\",\n  \"name\": \"John Doe\",\n  \"phone\": \"+919876543210\",\n  \"address_line1\": \"123 Main Street\",\n  \"address_line2\": \"Apartment 4B\",\n  \"landmark\": \"Near City Mall\",\n  \"city\": \"Pune\",\n  \"state\": \"Maharashtra\",\n  \"postal_code\": \"411001\",\n  \"country\": \"India\",\n  \"latitude\": 18.5204,\n  \"longitude\": 73.8567,\n  \"is_default\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/addresses",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"addresses"
+							]
+						},
+						"description": "Create a new address. Required fields: name, phone, address_line1, city, state, postal_code"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Address",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"label\": \"work\",\n  \"phone\": \"+919876543211\",\n  \"landmark\": \"Near New Mall\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/addresses/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"addresses",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						},
+						"description": "Update an existing address. All fields are optional."
+					},
+					"response": []
+				},
+				{
+					"name": "Set Default Address",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/addresses/:id/set-default",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"addresses",
+								":id",
+								"set-default"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						},
+						"description": "Set a specific address as the default. This will automatically unset any other default address."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Address (Soft)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/addresses/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"addresses",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						},
+						"description": "Soft delete an address (marks as inactive but doesn't remove from database)"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Address (Permanent)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/addresses/:id/permanent",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"addresses",
+								":id",
+								"permanent"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						},
+						"description": "Permanently delete an address from the database. Use with caution!"
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "Orders",
 			"item": [
 				{

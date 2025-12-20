@@ -139,3 +139,34 @@ exports.getDashboardStats = async (req, res, next) => {
         });
     }
 };
+
+/**
+ * @desc    Get recent orders for dashboard
+ * @route   GET /api/v1/admin/dashboard/recent-orders
+ * @access  Private/Admin
+ */
+exports.getRecentOrders = async (req, res, next) => {
+    try {
+        const { limit = 5 } = req.query;
+
+        // Fetch recent orders with user details populated
+        const recentOrders = await Order.find()
+            .populate('user_id', 'name email phone')
+            .sort({ createdAt: -1 })
+            .limit(parseInt(limit))
+            .select('order_number user_id total_amount status createdAt items');
+
+        res.status(200).json({
+            success: true,
+            data: recentOrders
+        });
+
+    } catch (error) {
+        console.error('Error fetching recent orders:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching recent orders',
+            error: error.message
+        });
+    }
+};

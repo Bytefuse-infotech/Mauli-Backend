@@ -1898,6 +1898,38 @@
 						"description": "Get dashboard statistics including Total Revenue, Total Orders, Total Products, and Active Customers with month-over-month changes (Admin/Manager only)"
 					},
 					"response": []
+				},
+				{
+					"name": "Get Recent Orders",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/dashboard/recent-orders?limit=5",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"dashboard",
+								"recent-orders"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "5",
+									"description": "Number of recent orders to fetch (default: 5)"
+								}
+							]
+						},
+						"description": "Get recent orders for dashboard with user details, sorted by creation date (Admin/Manager only)"
+					},
+					"response": []
 				}
 			]
 		}

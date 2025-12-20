@@ -1334,7 +1334,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"delivery_address\": {\n    \"line1\": \"123 Main Street\",\n    \"line2\": \"Apartment 4B\",\n    \"city\": \"Pune\",\n    \"state\": \"Maharashtra\",\n    \"postal_code\": \"411001\",\n    \"latitude\": 18.5204,\n    \"longitude\": 73.8567\n  },\n  \"payment_method\": \"cod\",\n  \"notes\": \"Please call before delivery\",\n  \"distance_km\": 5\n}"
+							"raw": "{\n  \"delivery_address\": {\n    \"line1\": \"123 Main Street\",\n    \"line2\": \"Apartment 4B\",\n    \"city\": \"Pune\",\n    \"state\": \"Maharashtra\",\n    \"postal_code\": \"411001\",\n    \"latitude\": 18.5204,\n    \"longitude\": 73.8567\n  },\n  \"delivery_slot\": {\n    \"date\": \"2025-12-15\",\n    \"start_time\": \"09:00\",\n    \"end_time\": \"11:00\"\n  },\n  \"payment_method\": \"cod\",\n  \"notes\": \"Please call before delivery\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/orders",
@@ -1345,52 +1345,7 @@
 								"orders"
 							]
 						},
-						"description": "Create order from cart items. delivery_slot is optional. If provided, it will reserve a delivery slot. distance_km is used for delivery fee calculation."
-					},
-					"response": []
-				},
-				{
-					"name": "Create Order (With Delivery Slot)",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"if (pm.response.code === 201) {",
-									"    const jsonData = pm.response.json();",
-									"    pm.collectionVariables.set('order_id', jsonData.data._id);",
-									"}"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							},
-							{
-								"key": "Authorization",
-								"value": "Bearer {{access_token}}"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"delivery_address\": {\n    \"line1\": \"123 Main Street\",\n    \"line2\": \"Apartment 4B\",\n    \"city\": \"Pune\",\n    \"state\": \"Maharashtra\",\n    \"postal_code\": \"411001\",\n    \"latitude\": 18.5204,\n    \"longitude\": 73.8567\n  },\n  \"delivery_slot\": {\n    \"date\": \"2025-12-25T00:00:00.000Z\",\n    \"start_time\": \"09:00\"\n  },\n  \"payment_method\": \"cod\",\n  \"notes\": \"Please call before delivery\",\n  \"distance_km\": 5\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/orders",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"orders"
-							]
-						},
-						"description": "Create order from cart items with delivery slot reservation. Requires delivery_slot.date and delivery_slot.start_time. The system will automatically assign end_time based on store configuration."
+						"description": "Create order from cart items"
 					},
 					"response": []
 				},

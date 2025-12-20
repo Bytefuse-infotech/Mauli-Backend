@@ -6,8 +6,8 @@ const Product = require('../models/Product');
 // @access  Private
 const getCart = async (req, res) => {
     try {
-        const cart = await Cart.getOrCreateCart(req.user._id)
-            .populate('items.product_id', 'name price discount images is_active');
+        let cart = await Cart.getOrCreateCart(req.user._id);
+        cart = await cart.populate('items.product_id', 'name price discount images is_active');
 
         const totals = cart.calculateTotals();
 

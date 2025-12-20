@@ -11,10 +11,10 @@ const {
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 // User routes
-router.post('/', protect, createOrder);
-router.get('/', protect, getOrders);
-router.get('/:id', protect, getOrder);
-router.patch('/:id/cancel', protect, cancelOrder);
+router.post('/orders', protect, createOrder);
+router.get('/orders', protect, getOrders);
+router.get('/orders/:id', protect, getOrder);
+router.patch('/orders/:id/cancel', protect, cancelOrder);
 
 // Admin routes
 router.get('/admin/orders', protect, authorize('admin'), getAllOrders);

@@ -20,7 +20,7 @@ router.use('/', categoryRoutes); // /categories and /admin/categories
 router.use('/', productRoutes); // /products and /admin/products
 router.use('/', storeconfigRoutes); // /storeconfig
 router.use('/cart', cartRoutes); // /cart
-router.use('/orders', orderRoutes); // /orders and /admin/orders
+router.use('/', orderRoutes); // /orders and /admin/orders
 router.use('/addresses', addressRoutes); // /addresses
 router.use('/content', contentRoutes); // /content and /content/admin/:key
 

@@ -13,6 +13,7 @@ const cartRoutes = require('./cartRoutes');
 const orderRoutes = require('./orderRoutes');
 const addressRoutes = require('./addressRoutes');
 const uploadRoutes = require('./uploadRoutes');
+const dashboardRoutes = require('./dashboardRoutes');
 
 const contentRoutes = require('./contentRoutes');
 
@@ -25,6 +26,7 @@ router.use('/', orderRoutes); // /orders and /admin/orders
 router.use('/addresses', addressRoutes); // /addresses
 router.use('/upload', uploadRoutes); // /upload
 router.use('/content', contentRoutes); // /content and /content/admin/:key
+router.use('/', dashboardRoutes); // /admin/dashboard/stats
 
 router.use('/auth', authRoutes);
 router.use('/admin/users', userRoutes);

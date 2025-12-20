@@ -1870,6 +1870,36 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "Dashboard (Admin)",
+			"item": [
+				{
+					"name": "Get Dashboard Statistics",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/dashboard/stats",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"dashboard",
+								"stats"
+							]
+						},
+						"description": "Get dashboard statistics including Total Revenue, Total Orders, Total Products, and Active Customers with month-over-month changes (Admin/Manager only)"
+					},
+					"response": []
+				}
+			]
 		}
 	]
 }

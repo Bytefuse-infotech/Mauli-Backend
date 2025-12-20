@@ -50,8 +50,7 @@ const DeliveryAddressSchema = new mongoose.Schema({
 const OrderSchema = new mongoose.Schema({
     order_number: {
         type: String,
-        unique: true,
-        required: true
+        unique: true
     },
     user_id: {
         type: mongoose.Schema.Types.ObjectId,
@@ -93,9 +92,9 @@ const OrderSchema = new mongoose.Schema({
         required: true
     },
     delivery_slot: {
-        date: { type: Date, required: true },
-        start_time: { type: String, required: true },
-        end_time: { type: String, required: true }
+        date: { type: Date, required: false },
+        start_time: { type: String, required: false },
+        end_time: { type: String, required: false }
     },
     status: {
         type: String,

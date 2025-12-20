@@ -17,10 +17,10 @@ const createOrder = async (req, res) => {
         } = req.body;
 
         // Validate required fields
-        if (!delivery_address || !delivery_slot) {
+        if (!delivery_address) {
             return res.status(400).json({
                 success: false,
-                message: 'delivery_address and delivery_slot are required'
+                message: 'delivery_address is required'
             });
         }
 
@@ -99,49 +99,62 @@ const createOrder = async (req, res) => {
 
         const total_amount = Math.max(0, subtotal - discount_amount + delivery_fee);
 
-        // Reserve delivery slot
-        const slotDate = new Date(delivery_slot.date);
-        slotDate.setUTCHours(0, 0, 0, 0);
+        // Handle delivery slot if provided
+        let orderDeliverySlot = null;
+        let config = null;
+        let timeSlot = null;
 
-        const config = await StoreConfig.findOne({});
-        if (!config) {
-            return res.status(500).json({
-                success: false,
-                message: 'Store configuration not found'
+        if (delivery_slot) {
+            // Reserve delivery slot
+            const slotDate = new Date(delivery_slot.date);
+            slotDate.setUTCHours(0, 0, 0, 0);
+
+            config = await StoreConfig.findOne({});
+            if (!config) {
+                return res.status(500).json({
+                    success: false,
+                    message: 'Store configuration not found'
+                });
+            }
+
+            const dateSlot = config.delivery_slots.find(ds => {
+                const storedDate = new Date(ds.date);
+                storedDate.setUTCHours(0, 0, 0, 0);
+                return storedDate.getTime() === slotDate.getTime();
             });
-        }
 
-        const dateSlot = config.delivery_slots.find(ds => {
-            const storedDate = new Date(ds.date);
-            storedDate.setUTCHours(0, 0, 0, 0);
-            return storedDate.getTime() === slotDate.getTime();
-        });
+            if (!dateSlot) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Selected delivery date not available'
+                });
+            }
 
-        if (!dateSlot) {
-            return res.status(400).json({
-                success: false,
-                message: 'Selected delivery date not available'
-            });
-        }
+            timeSlot = dateSlot.slots.find(s => s.start_time === delivery_slot.start_time);
 
-        const timeSlot = dateSlot.slots.find(s => s.start_time === delivery_slot.start_time);
+            if (!timeSlot) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Selected time slot not found'
+                });
+            }
 
-        if (!timeSlot) {
-            return res.status(400).json({
-                success: false,
-                message: 'Selected time slot not found'
-            });
-        }
+            if (timeSlot.booked >= timeSlot.capacity) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Selected time slot is full'
+                });
+            }
 
-        if (timeSlot.booked >= timeSlot.capacity) {
-            return res.status(400).json({
-                success: false,
-                message: 'Selected time slot is full'
-            });
+            orderDeliverySlot = {
+                date: slotDate,
+                start_time: delivery_slot.start_time,
+                end_time: timeSlot.end_time
+            };
         }
 
         // Create order
-        const order = await Order.create({
+        const orderData = {
             user_id: req.user._id,
             items: orderItems,
             subtotal,
@@ -149,18 +162,21 @@ const createOrder = async (req, res) => {
             discount_amount,
             total_amount,
             delivery_address,
-            delivery_slot: {
-                date: slotDate,
-                start_time: delivery_slot.start_time,
-                end_time: timeSlot.end_time
-            },
             payment_method,
             notes
-        });
+        };
 
-        // Reserve the slot
-        timeSlot.booked += 1;
-        await config.save();
+        if (orderDeliverySlot) {
+            orderData.delivery_slot = orderDeliverySlot;
+        }
+
+        const order = await Order.create(orderData);
+
+        // Reserve the slot if it was provided
+        if (timeSlot && config) {
+            timeSlot.booked += 1;
+            await config.save();
+        }
 
         // Clear cart
         cart.items = [];
@@ -278,23 +294,25 @@ const cancelOrder = async (req, res) => {
         order.status = 'cancelled';
         await order.save();
 
-        // Release delivery slot
-        const config = await StoreConfig.findOne({});
-        if (config) {
-            const slotDate = new Date(order.delivery_slot.date);
-            slotDate.setUTCHours(0, 0, 0, 0);
+        // Release delivery slot if order had one
+        if (order.delivery_slot) {
+            const config = await StoreConfig.findOne({});
+            if (config) {
+                const slotDate = new Date(order.delivery_slot.date);
+                slotDate.setUTCHours(0, 0, 0, 0);
 
-            const dateSlot = config.delivery_slots.find(ds => {
-                const storedDate = new Date(ds.date);
-                storedDate.setUTCHours(0, 0, 0, 0);
-                return storedDate.getTime() === slotDate.getTime();
-            });
+                const dateSlot = config.delivery_slots.find(ds => {
+                    const storedDate = new Date(ds.date);
+                    storedDate.setUTCHours(0, 0, 0, 0);
+                    return storedDate.getTime() === slotDate.getTime();
+                });
 
-            if (dateSlot) {
-                const timeSlot = dateSlot.slots.find(s => s.start_time === order.delivery_slot.start_time);
-                if (timeSlot && timeSlot.booked > 0) {
-                    timeSlot.booked -= 1;
-                    await config.save();
+                if (dateSlot) {
+                    const timeSlot = dateSlot.slots.find(s => s.start_time === order.delivery_slot.start_time);
+                    if (timeSlot && timeSlot.booked > 0) {
+                        timeSlot.booked -= 1;
+                        await config.save();
+                    }
                 }
             }
         }

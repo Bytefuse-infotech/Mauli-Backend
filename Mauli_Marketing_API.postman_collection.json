@@ -1932,6 +1932,94 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "Razorpay Payments",
+			"item": [
+				{
+					"name": "Get Razorpay Key (Public)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/razorpay/key",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"razorpay",
+								"key"
+							]
+						},
+						"description": "Get Razorpay public key for frontend integration"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Order",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"amount\": 500,\n  \"currency\": \"INR\",\n  \"notes\": {\n    \"orderId\": \"ORDER_123\",\n    \"userId\": \"user_123\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/razorpay/order",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"razorpay",
+								"order"
+							]
+						},
+						"description": "Create a Razorpay order. Amount is in INR (not paise). Returns order_id for payment initiation."
+					},
+					"response": []
+				},
+				{
+					"name": "Verify Payment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"razorpay_order_id\": \"order_MxyzABC123\",\n  \"razorpay_payment_id\": \"pay_XyzABC456\",\n  \"razorpay_signature\": \"abc123signature...\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/razorpay/verify",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"razorpay",
+								"verify"
+							]
+						},
+						"description": "Verify Razorpay payment signature using HMAC-SHA256. Should be called after successful payment in the Razorpay modal."
+					},
+					"response": []
+				}
+			]
 		}
 	]
 }

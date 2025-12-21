@@ -163,6 +163,7 @@ const createOrder = async (req, res) => {
             total_amount,
             delivery_address,
             payment_method,
+            payment_status: payment_method === 'online' ? 'paid' : 'pending',
             notes
         };
 

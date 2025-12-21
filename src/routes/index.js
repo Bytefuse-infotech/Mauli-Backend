@@ -15,6 +15,7 @@ const addressRoutes = require('./addressRoutes');
 const uploadRoutes = require('./uploadRoutes');
 const dashboardRoutes = require('./dashboardRoutes');
 const razorpayRoutes = require('./razorpayRoutes');
+const notificationRoutes = require('./notificationRoutes');
 
 const contentRoutes = require('./contentRoutes');
 
@@ -33,5 +34,6 @@ router.use('/auth', authRoutes);
 router.use('/admin/users', userRoutes);
 router.use('/', sessionRoutes);
 router.use('/razorpay', razorpayRoutes); // /razorpay routes
+router.use('/notifications', notificationRoutes); // /notifications routes
 
 module.exports = router;

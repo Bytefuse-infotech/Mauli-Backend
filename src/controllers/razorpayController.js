@@ -1,5 +1,6 @@
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
+const { createNotification } = require('./notificationController');
 
 // Initialize Razorpay instance
 const razorpayInstance = new Razorpay({
@@ -90,6 +91,18 @@ const verifyPayment = async (req, res) => {
         try {
             const payment = await razorpayInstance.payments.fetch(razorpay_payment_id);
 
+            // Create notification for payment success
+            await createNotification(
+                req.user._id,
+                'Payment Successful',
+                `Payment of ₹${payment.amount / 100} was successful for your order.`,
+                'payment',
+                {
+                    paymentId: payment.id,
+                    orderId: payment.order_id
+                }
+            );
+
             return res.status(200).json({
                 success: true,
                 status: 'success',
@@ -106,6 +119,18 @@ const verifyPayment = async (req, res) => {
             });
         } catch (fetchError) {
             console.error('Error fetching payment details:', fetchError);
+
+            // Still create notification even if fetch details failed partially, since signature matched
+            await createNotification(
+                req.user._id,
+                'Payment Verified',
+                `Payment verification successful.`,
+                'payment',
+                {
+                    paymentId: razorpay_payment_id
+                }
+            );
+
             // Even if fetch fails, signature was valid
             return res.status(200).json({
                 success: true,

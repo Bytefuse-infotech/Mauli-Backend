@@ -2,6 +2,7 @@ const Order = require('../models/Order');
 const Cart = require('../models/Cart');
 const Product = require('../models/Product');
 const StoreConfig = require('../models/StoreConfig');
+const { createNotification } = require('./notificationController');
 
 // @desc    Create order from cart
 // @route   POST /api/v1/orders
@@ -182,6 +183,15 @@ const createOrder = async (req, res) => {
         // Clear cart
         cart.items = [];
         await cart.save();
+
+        // Create notification for user
+        await createNotification(
+            req.user._id,
+            'Order Placed Successfully',
+            `Your order #${order.order_number || order._id} has been placed successfully.`,
+            'order',
+            { orderId: order._id }
+        );
 
         return res.status(201).json({
             success: true,

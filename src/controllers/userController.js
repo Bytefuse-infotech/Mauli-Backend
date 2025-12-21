@@ -44,7 +44,7 @@ const createUser = async (req, res) => {
 const getUsers = async (req, res) => {
     try {
         const pageSize = 10;
-        const page = Number(req.query.pageNumber) || 1;
+        const page = Number(req.query.pageNumber) || Number(req.query.page) || 1;
 
         const keyword = req.query.keyword ? {
             name: {
@@ -58,12 +58,44 @@ const getUsers = async (req, res) => {
         if (req.query.is_active) filter.is_active = req.query.is_active === 'true';
 
         const count = await User.countDocuments(filter);
-        const users = await User.find(filter)
-            .select('-password_hash')
-            .limit(pageSize)
-            .skip(pageSize * (page - 1))
-            .sort({ createdAt: -1 })
-            .lean();
+
+        // Use aggregation to get users with computed order counts
+        const Order = require('../models/Order');
+        const users = await User.aggregate([
+            { $match: filter },
+            { $sort: { createdAt: -1 } },
+            { $skip: pageSize * (page - 1) },
+            { $limit: pageSize },
+            {
+                $lookup: {
+                    from: 'orders',
+                    let: { userId: '$_id' },
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: { $eq: ['$user_id', '$$userId'] },
+                                status: { $ne: 'cancelled' }
+                            }
+                        },
+                        { $count: 'count' }
+                    ],
+                    as: 'orderData'
+                }
+            },
+            {
+                $addFields: {
+                    total_orders_count: {
+                        $ifNull: [{ $arrayElemAt: ['$orderData.count', 0] }, 0]
+                    }
+                }
+            },
+            {
+                $project: {
+                    password_hash: 0,
+                    orderData: 0
+                }
+            }
+        ]);
 
         res.json({ users, page, pages: Math.ceil(count / pageSize), total: count });
     } catch (error) {

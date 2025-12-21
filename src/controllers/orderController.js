@@ -2,6 +2,7 @@ const Order = require('../models/Order');
 const Cart = require('../models/Cart');
 const Product = require('../models/Product');
 const StoreConfig = require('../models/StoreConfig');
+const User = require('../models/User');
 const { createNotification } = require('./notificationController');
 
 // @desc    Create order from cart
@@ -184,6 +185,11 @@ const createOrder = async (req, res) => {
         cart.items = [];
         await cart.save();
 
+        // Increment user's total orders count
+        await User.findByIdAndUpdate(req.user._id, {
+            $inc: { total_orders_count: 1 }
+        });
+
         // Create notification for user
         await createNotification(
             req.user._id,
@@ -328,6 +334,11 @@ const cancelOrder = async (req, res) => {
             }
         }
 
+        // Decrement user's total orders count
+        await User.findByIdAndUpdate(order.user_id, {
+            $inc: { total_orders_count: -1 }
+        });
+
         return res.json({
             success: true,
             message: 'Order cancelled successfully',
@@ -411,8 +422,18 @@ const updateOrderStatus = async (req, res) => {
             });
         }
 
+        // Track if order is being cancelled from non-cancelled status
+        const wasCancelled = order.status === 'cancelled';
+
         order.status = status;
         await order.save();
+
+        // If changing to cancelled and wasn't already cancelled, decrement count
+        if (status === 'cancelled' && !wasCancelled) {
+            await User.findByIdAndUpdate(order.user_id, {
+                $inc: { total_orders_count: -1 }
+            });
+        }
 
         // Send notification based on status
         let notificationTitle = '';

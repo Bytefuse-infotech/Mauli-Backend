@@ -1,4 +1,5 @@
 const Notification = require('../models/Notification');
+const User = require('../models/User');
 
 // @desc    Get user notifications
 // @route   GET /api/v1/notifications
@@ -146,10 +147,62 @@ const createNotification = async (recipientId, title, message, type = 'system', 
     }
 };
 
+
+
+// @desc    Broadcast notification to all users
+// @route   POST /api/v1/notifications/broadcast
+// @access  Private/Admin
+const broadcastNotification = async (req, res) => {
+    try {
+        const { title, message, type = 'promo', data = {} } = req.body;
+
+        if (!title || !message) {
+            return res.status(400).json({
+                success: false,
+                message: 'Title and message are required'
+            });
+        }
+
+        // Get all active users
+        const users = await User.find({ is_active: true }).select('_id');
+
+        if (users.length === 0) {
+            return res.status(200).json({
+                success: true,
+                message: 'No active users found to broadcast to'
+            });
+        }
+
+        // Prepare notifications for bulk insert
+        const notifications = users.map(user => ({
+            recipient: user._id,
+            title,
+            message,
+            type,
+            data,
+            is_read: false
+        }));
+
+        await Notification.insertMany(notifications);
+
+        res.status(200).json({
+            success: true,
+            message: `Notification broadcasted to ${users.length} users`
+        });
+    } catch (error) {
+        console.error('Error broadcasting notification:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server Error'
+        });
+    }
+};
+
 module.exports = {
     getNotifications,
     markAsRead,
     markAllAsRead,
     deleteNotification,
-    createNotification
+    createNotification,
+    broadcastNotification
 };

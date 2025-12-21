@@ -4,12 +4,14 @@ const {
     getNotifications,
     markAsRead,
     markAllAsRead,
-    deleteNotification
+    deleteNotification,
+    broadcastNotification
 } = require('../controllers/notificationController');
-const { protect } = require('../middleware/authMiddleware');
+const { protect, authorize } = require('../middleware/authMiddleware');
 
 router.use(protect);
 
+router.post('/broadcast', authorize('admin'), broadcastNotification);
 router.get('/', getNotifications);
 router.put('/read-all', markAllAsRead);
 router.put('/:id/read', markAsRead);

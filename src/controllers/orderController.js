@@ -414,6 +414,48 @@ const updateOrderStatus = async (req, res) => {
         order.status = status;
         await order.save();
 
+        // Send notification based on status
+        let notificationTitle = '';
+        let notificationMessage = '';
+        const notificationData = { orderId: order._id };
+
+        switch (status) {
+            case 'confirmed':
+                notificationTitle = 'Order Confirmed';
+                notificationMessage = `Your order #${order.order_number || order._id} has been confirmed.`;
+                break;
+            case 'processing':
+                notificationTitle = 'Order Processing';
+                notificationMessage = `Your order #${order.order_number || order._id} is being processed.`;
+                break;
+            case 'out_for_delivery':
+                notificationTitle = 'Out for Delivery';
+                notificationMessage = `Your order #${order.order_number || order._id} is out for delivery.`;
+                break;
+            case 'delivered':
+                notificationTitle = 'Order Delivered';
+                notificationMessage = `Your order #${order.order_number || order._id} has been delivered successfully.`;
+                break;
+            case 'cancelled':
+                notificationTitle = 'Order Cancelled';
+                notificationMessage = `Your order #${order.order_number || order._id} has been cancelled.`;
+                break;
+            case 'refunded':
+                notificationTitle = 'Refund Processed';
+                notificationMessage = `Refund for your order #${order.order_number || order._id} has been processed.`;
+                break;
+        }
+
+        if (notificationTitle) {
+            await createNotification(
+                order.user_id,
+                notificationTitle,
+                notificationMessage,
+                'order',
+                notificationData
+            );
+        }
+
         return res.json({
             success: true,
             message: 'Order status updated',

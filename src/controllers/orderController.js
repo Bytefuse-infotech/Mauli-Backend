@@ -356,6 +356,7 @@ const cancelOrder = async (req, res) => {
 // @desc    Get all orders (Admin)
 // @route   GET /api/v1/admin/orders
 // @access  Private/Admin
+// @query   page, page_size, status, payment_status, start_date, end_date
 const getAllOrders = async (req, res) => {
     try {
         const page = Math.max(1, parseInt(req.query.page) || 1);
@@ -370,6 +371,23 @@ const getAllOrders = async (req, res) => {
 
         if (req.query.payment_status) {
             filter.payment_status = req.query.payment_status;
+        }
+
+        // Date range filtering
+        if (req.query.start_date || req.query.end_date) {
+            filter.createdAt = {};
+
+            if (req.query.start_date) {
+                const startDate = new Date(req.query.start_date);
+                startDate.setHours(0, 0, 0, 0);
+                filter.createdAt.$gte = startDate;
+            }
+
+            if (req.query.end_date) {
+                const endDate = new Date(req.query.end_date);
+                endDate.setHours(23, 59, 59, 999);
+                filter.createdAt.$lte = endDate;
+            }
         }
 
         const [total, orders] = await Promise.all([

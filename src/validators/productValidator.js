@@ -2,8 +2,9 @@ const Joi = require('joi');
 
 const createProductSchema = Joi.object({
     name: Joi.string().trim().min(1).max(256).required(),
+    mrp: Joi.number().precision(2).min(0).required(),
     price: Joi.number().precision(2).min(0).required(),
-    discount: Joi.number().precision(2).min(0).default(0),
+    discount: Joi.number().precision(2).min(0).optional(), // Auto-calculated from MRP - price
     unit: Joi.string().valid('box', 'dozen', 'both').required(),
     description: Joi.string().allow('', null).max(2000).default(''),
     images: Joi.array().items(
@@ -17,8 +18,9 @@ const createProductSchema = Joi.object({
 
 const updateProductSchema = Joi.object({
     name: Joi.string().trim().min(1).max(256),
+    mrp: Joi.number().precision(2).min(0),
     price: Joi.number().precision(2).min(0),
-    discount: Joi.number().precision(2).min(0),
+    discount: Joi.number().precision(2).min(0).optional(), // Auto-calculated from MRP - price
     unit: Joi.string().valid('box', 'dozen', 'both'),
     description: Joi.string().allow('', null).max(2000),
     images: Joi.array().items(

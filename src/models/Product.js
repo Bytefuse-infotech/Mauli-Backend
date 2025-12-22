@@ -12,10 +12,15 @@ const ProductSchema = new mongoose.Schema({
         trim: true,
         maxlength: [256, 'Product name cannot exceed 256 characters']
     },
+    mrp: {
+        type: Number,
+        required: [true, 'MRP is required'],
+        min: [0, 'MRP cannot be negative']
+    },
     price: {
         type: Number,
-        required: [true, 'Price is required'],
-        min: [0, 'Price cannot be negative']
+        required: [true, 'Selling price is required'],
+        min: [0, 'Selling price cannot be negative']
     },
     discount: {
         type: Number,
@@ -50,6 +55,26 @@ const ProductSchema = new mongoose.Schema({
     }
 }, {
     timestamps: true
+});
+
+// Pre-save hook to auto-calculate discount from MRP and price
+ProductSchema.pre('save', function (next) {
+    // Calculate discount as MRP - selling price
+    if (this.mrp && this.price) {
+        this.discount = Math.max(0, this.mrp - this.price);
+    }
+    next();
+});
+
+// Pre-update hook for findOneAndUpdate operations
+ProductSchema.pre('findOneAndUpdate', function (next) {
+    const update = this.getUpdate();
+    if (update.mrp !== undefined && update.price !== undefined) {
+        update.discount = Math.max(0, update.mrp - update.price);
+    } else if (update.$set && update.$set.mrp !== undefined && update.$set.price !== undefined) {
+        update.$set.discount = Math.max(0, update.$set.mrp - update.$set.price);
+    }
+    next();
 });
 
 // Indexes for efficient queries

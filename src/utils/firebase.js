@@ -7,56 +7,9 @@ const admin = require('firebase-admin');
 let firebaseApp = null;
 
 /**
- * Parse service account from environment variable
- * Supports:
- * - Base64 encoded JSON (recommended - set FIREBASE_SERVICE_ACCOUNT_BASE64)
- * - Raw JSON with quotes
- */
-const parseServiceAccount = () => {
-    // Option 1: Base64 encoded (RECOMMENDED - avoids all escaping issues)
-    const base64Input = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
-    if (base64Input && base64Input.trim()) {
-        try {
-            const jsonString = Buffer.from(base64Input.trim(), 'base64').toString('utf8');
-            console.log('🔍 Parsing Base64 encoded service account...');
-            return JSON.parse(jsonString);
-        } catch (e) {
-            console.error('❌ Failed to parse Base64 service account:', e.message);
-        }
-    }
-
-    // Option 2: Raw JSON (FIREBASE_SERVICE_ACCOUNT_JSON)
-    const jsonInput = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
-    if (!jsonInput || jsonInput.trim() === '') {
-        return null;
-    }
-
-    let jsonString = jsonInput.trim();
-
-    console.log('🔍 DEBUG - JSON length:', jsonString.length);
-
-    // Remove surrounding quotes if present
-    if (jsonString.startsWith('"') && jsonString.endsWith('"')) {
-        jsonString = jsonString.slice(1, -1);
-        jsonString = jsonString.replace(/\\"/g, '"');
-    } else if (jsonString.startsWith("'") && jsonString.endsWith("'")) {
-        jsonString = jsonString.slice(1, -1);
-    }
-
-    // Replace literal \n with actual newlines
-    jsonString = jsonString.replace(/\\n/g, '\n');
-
-    try {
-        return JSON.parse(jsonString);
-    } catch (e) {
-        console.log('🔍 DEBUG - Parse error:', e.message);
-        throw new Error(`Invalid JSON format: ${e.message}`);
-    }
-};
-
-/**
  * Initialize Firebase Admin SDK
- * Uses service account credentials from environment variable
+ * Reads service account from FIREBASE_SERVICE_ACCOUNT_JSON environment variable
+ * The JSON should be minified (single line) with literal \n in private_key
  */
 const initializeFirebase = () => {
     try {
@@ -65,14 +18,16 @@ const initializeFirebase = () => {
             return admin;
         }
 
-        // Parse service account (checks FIREBASE_SERVICE_ACCOUNT_BASE64 first, then FIREBASE_SERVICE_ACCOUNT_JSON)
-        const serviceAccount = parseServiceAccount();
+        // Read the JSON string from the environment variable
+        const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
 
-        if (!serviceAccount) {
-            console.warn('⚠️  Firebase service account not configured. FCM push notifications will be disabled.');
-            console.warn('   Set FIREBASE_SERVICE_ACCOUNT_BASE64 (recommended) or FIREBASE_SERVICE_ACCOUNT_JSON');
+        if (!serviceAccountJson) {
+            console.warn('⚠️  FIREBASE_SERVICE_ACCOUNT_JSON not configured. FCM push notifications will be disabled.');
             return null;
         }
+
+        // Parse the JSON string back into an object
+        const serviceAccount = JSON.parse(serviceAccountJson);
 
         // Validate required fields
         if (!serviceAccount.project_id || !serviceAccount.private_key || !serviceAccount.client_email) {
@@ -88,7 +43,6 @@ const initializeFirebase = () => {
         return admin;
     } catch (error) {
         console.error('❌ Firebase Admin SDK initialization failed:', error.message);
-        console.error('   Hint: Ensure FIREBASE_SERVICE_ACCOUNT_JSON contains valid JSON (no quotes around the value)');
         return null;
     }
 };

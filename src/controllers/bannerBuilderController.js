@@ -530,21 +530,16 @@ const getDefaultTemplate = async (req, res) => {
                 }
             ],
             socialLinks: {
-                isVisible: true,
+                isVisible: false,
                 position: { x: 20, y: 20, xUnit: 'px', yUnit: 'px' },
-                label: 'Follow our social networks',
+                label: '',
                 labelColor: '#FFFFFF',
-                links: [
-                    { platform: 'facebook', url: '#', iconColor: '#FFFFFF' },
-                    { platform: 'instagram', url: '#', iconColor: '#FFFFFF' },
-                    { platform: 'twitter', url: '#', iconColor: '#FFFFFF' },
-                    { platform: 'youtube', url: '#', iconColor: '#FFFFFF' }
-                ]
+                links: []
             },
             branding: {
-                isVisible: true,
+                isVisible: false,
                 logoUrl: '',
-                logoText: 'Shopping Center',
+                logoText: '',
                 position: 'bottom-right',
                 maxWidth: '150px'
             },

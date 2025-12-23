@@ -96,7 +96,21 @@ const userSchema = new mongoose.Schema({
     },
     otp_expires_at: {
         type: Date
-    }
+    },
+    // FCM tokens for push notifications (multiple devices per user)
+    fcm_tokens: [{
+        token: {
+            type: String,
+            required: true
+        },
+        device_info: {
+            type: String // Optional: browser/device identifier
+        },
+        created_at: {
+            type: Date,
+            default: Date.now
+        }
+    }]
 }, {
     timestamps: true
 });

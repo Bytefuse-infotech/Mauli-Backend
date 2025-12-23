@@ -18,6 +18,7 @@ const razorpayRoutes = require('./razorpayRoutes');
 const notificationRoutes = require('./notificationRoutes');
 
 const contentRoutes = require('./contentRoutes');
+const fcmRoutes = require('./fcmRoutes');
 
 router.use('/', bannerRoutes); // /banners and /admin/banners
 router.use('/', categoryRoutes); // /categories and /admin/categories
@@ -35,5 +36,7 @@ router.use('/admin/users', userRoutes);
 router.use('/', sessionRoutes);
 router.use('/razorpay', razorpayRoutes); // /razorpay routes
 router.use('/notifications', notificationRoutes); // /notifications routes
+router.use('/users', fcmRoutes); // /users/fcm-token and /users/admin/push-notifications
 
 module.exports = router;
+

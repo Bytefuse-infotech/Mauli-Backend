@@ -1,7 +1,9 @@
 require('dotenv').config();
+const http = require('http');
 const app = require('./app');
 
 const connectDB = require('./config/db');
+const { initializeWebSocket } = require('./utils/websocket');
 
 const PORT = process.env.PORT || 5000;
 
@@ -12,8 +14,15 @@ connectDB();
 const { initializeFirebase } = require('./utils/firebase');
 initializeFirebase();
 
-const server = app.listen(PORT, () => {
+// Create HTTP server
+const server = http.createServer(app);
+
+// Initialize WebSocket for real-time banner builder updates
+initializeWebSocket(server, app);
+
+server.listen(PORT, () => {
     console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+    console.log(`WebSocket server ready for real-time connections`);
 });
 
 // Handle unhandled promise rejections

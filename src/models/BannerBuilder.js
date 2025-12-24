@@ -149,6 +149,119 @@ const brandingSchema = new mongoose.Schema({
 }, { _id: false });
 
 /**
+ * Element Position Schema - Normalized 0-1 positioning for multi-canvas
+ * x: 0 = left edge, 0.5 = center, 1 = right edge
+ * y: 0 = top edge, 0.5 = center, 1 = bottom edge
+ */
+const elementPositionSchema = new mongoose.Schema({
+    x: { type: Number, default: 0, min: 0, max: 1 },  // normalized 0-1
+    y: { type: Number, default: 0, min: 0, max: 1 }   // normalized 0-1
+}, { _id: false });
+
+/**
+ * Text Element Layout Schema - Position and size for text elements
+ */
+const textElementLayoutSchema = new mongoose.Schema({
+    position: { type: elementPositionSchema, default: () => ({ x: 0.05, y: 0.2 }) },
+    fontSize: { type: String, default: '32px' },
+    visible: { type: Boolean, default: true }
+}, { _id: false });
+
+/**
+ * Asset Element Layout Schema - Position and scale for images/badges
+ */
+const assetElementLayoutSchema = new mongoose.Schema({
+    position: { type: elementPositionSchema, default: () => ({ x: 0.5, y: 0.5 }) },
+    scale: { type: Number, default: 1, min: 0.1, max: 3 },
+    visible: { type: Boolean, default: true }
+}, { _id: false });
+
+/**
+ * Decorative Element Layout Schema - Position, scale, visibility for decorative elements
+ */
+const decorativeElementLayoutSchema = new mongoose.Schema({
+    position: { type: elementPositionSchema, default: () => ({ x: 0.7, y: 0.3 }) },
+    scale: { type: Number, default: 0.5, min: 0.1, max: 2 },
+    visible: { type: Boolean, default: true }
+}, { _id: false });
+
+/**
+ * Device Layout Schema - Complete layout for a specific device (mobile)
+ */
+const deviceLayoutSchema = new mongoose.Schema({
+    dimensions: {
+        height: { type: String, default: '250px' },
+        padding: { type: String, default: '20px' }
+    },
+    mainTitle: { type: textElementLayoutSchema, default: () => ({ position: { x: 0.05, y: 0.15 }, fontSize: '28px', visible: true }) },
+    subTitle: { type: textElementLayoutSchema, default: () => ({ position: { x: 0.05, y: 0.05 }, fontSize: '12px', visible: true }) },
+    description: { type: textElementLayoutSchema, default: () => ({ position: { x: 0.05, y: 0.45 }, fontSize: '14px', visible: false }) },
+    saleBadge: { type: assetElementLayoutSchema, default: () => ({ position: { x: 0.6, y: 0.4 }, scale: 0.6, visible: true }) },
+    productImage: { type: assetElementLayoutSchema, default: () => ({ position: { x: 0.7, y: 0.5 }, scale: 0.8, visible: true }) },
+    cta: { type: textElementLayoutSchema, default: () => ({ position: { x: 0.05, y: 0.7 }, fontSize: '14px', visible: true }) },
+    decorativeElements: [decorativeElementLayoutSchema]
+}, { _id: false });
+
+/**
+ * Shared Content Schema - Text, images, colors (synced across devices)
+ * Editing this updates all device layouts simultaneously
+ */
+const sharedContentSchema = new mongoose.Schema({
+    // Background
+    background: {
+        color: { type: String, default: '#ffffff' },
+        gradient: { type: String, default: '' },
+        imageUrl: { type: String, default: '' },
+        imageSize: { type: String, default: 'cover' },
+        imagePosition: { type: String, default: 'center' }
+    },
+    // Title
+    title: {
+        text: { type: String, default: '' },
+        fontFamily: { type: String, default: 'Poppins' },
+        fontWeight: { type: String, default: '700' },
+        color: { type: String, default: '#333333' },
+        textShadow: { type: String, default: '' }
+    },
+    // Subtitle
+    subtitle: {
+        text: { type: String, default: '' },
+        fontFamily: { type: String, default: 'Poppins' },
+        fontWeight: { type: String, default: '600' },
+        color: { type: String, default: '#666666' },
+        borderColor: { type: String, default: 'transparent' },
+        bgColor: { type: String, default: 'transparent' }
+    },
+    // Description
+    description: {
+        text: { type: String, default: '' },
+        fontFamily: { type: String, default: 'Poppins' },
+        fontWeight: { type: String, default: '400' },
+        color: { type: String, default: '#666666' }
+    },
+    // Sale Badge
+    badge: {
+        text: { type: String, default: '' },
+        bgColor: { type: String, default: '#FF6B6B' },
+        textColor: { type: String, default: '#FFFFFF' },
+        shape: { type: String, enum: ['circle', 'rounded', 'triangle', 'pill'], default: 'circle' }
+    },
+    // Product Image
+    productImage: {
+        url: { type: String, default: '' },
+        alt: { type: String, default: '' }
+    },
+    // CTA Button
+    cta: {
+        text: { type: String, default: 'Shop Now' },
+        link: { type: String, default: '/' },
+        bgColor: { type: String, default: '#333333' },
+        textColor: { type: String, default: '#FFFFFF' },
+        borderRadius: { type: String, default: '8px' }
+    }
+}, { _id: false });
+
+/**
  * Main Banner Builder Schema
  */
 const bannerBuilderSchema = new mongoose.Schema({
@@ -296,6 +409,17 @@ const bannerBuilderSchema = new mongoose.Schema({
         impressions: { type: Number, default: 0 },
         clicks: { type: Number, default: 0 }
     },
+
+    // ==================== Multi-Canvas Fields ====================
+
+    // Shared content (text, images, colors - synced across devices)
+    sharedContent: { type: sharedContentSchema, default: null },
+
+    // Desktop layout (positions for 1200×400 canvas)
+    desktopLayout: { type: deviceLayoutSchema, default: null },
+
+    // Mobile layout (positions for 400×600 canvas)
+    mobileLayout: { type: deviceLayoutSchema, default: null },
 
     // Version tracking for undo/redo
     version: { type: Number, default: 1 },

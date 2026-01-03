@@ -14,6 +14,9 @@ const getAllBannerBuilders = async (req, res) => {
         // Filter by status
         if (req.query.status) {
             query.status = req.query.status;
+        } else {
+            // When no status filter is applied, exclude 'expired' banners (soft deleted)
+            query.status = { $ne: 'expired' };
         }
 
         // Search by name

@@ -301,7 +301,7 @@ const cancelOrder = async (req, res) => {
             });
         }
 
-        if (order.status !== 'pending' && order.status !== 'confirmed') {
+        if (order.status !== 'placed') {
             return res.status(400).json({
                 success: false,
                 message: 'Order cannot be cancelled at this stage'
@@ -459,17 +459,9 @@ const updateOrderStatus = async (req, res) => {
         const notificationData = { orderId: order._id };
 
         switch (status) {
-            case 'confirmed':
-                notificationTitle = 'Order Confirmed';
-                notificationMessage = `Your order #${order.order_number || order._id} has been confirmed.`;
-                break;
-            case 'processing':
-                notificationTitle = 'Order Processing';
-                notificationMessage = `Your order #${order.order_number || order._id} is being processed.`;
-                break;
-            case 'out_for_delivery':
-                notificationTitle = 'Out for Delivery';
-                notificationMessage = `Your order #${order.order_number || order._id} is out for delivery.`;
+            case 'placed':
+                notificationTitle = 'Order Placed';
+                notificationMessage = `Your order #${order.order_number || order._id} has been placed.`;
                 break;
             case 'delivered':
                 notificationTitle = 'Order Delivered';
@@ -478,10 +470,6 @@ const updateOrderStatus = async (req, res) => {
             case 'cancelled':
                 notificationTitle = 'Order Cancelled';
                 notificationMessage = `Your order #${order.order_number || order._id} has been cancelled.`;
-                break;
-            case 'refunded':
-                notificationTitle = 'Refund Processed';
-                notificationMessage = `Refund for your order #${order.order_number || order._id} has been processed.`;
                 break;
         }
 

@@ -215,6 +215,49 @@ const getProfile = async (req, res) => {
     }
 };
 
+// @desc    Update current user profile
+// @route   PUT /api/v1/users/profile
+// @access  Private
+const updateProfile = async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+
+        if (user) {
+            user.name = req.body.name || user.name;
+            user.email = req.body.email || user.email;
+            user.phone = req.body.phone || user.phone;
+
+            if (req.body.address) {
+                user.address = {
+                    line1: req.body.address.line1 || user.address?.line1,
+                    line2: req.body.address.line2 || user.address?.line2,
+                    city: req.body.address.city || user.address?.city,
+                    state: req.body.address.state || user.address?.state,
+                    postal_code: req.body.address.postal_code || user.address?.postal_code,
+                    country: req.body.address.country || user.address?.country
+                };
+            }
+
+            const updatedUser = await user.save();
+
+            res.json({
+                _id: updatedUser._id,
+                name: updatedUser.name,
+                email: updatedUser.email,
+                phone: updatedUser.phone,
+                role: updatedUser.role,
+                address: updatedUser.address,
+                is_active: updatedUser.is_active
+            });
+        } else {
+            res.status(404).json({ message: 'User not found' });
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
 module.exports = {
     createUser,
     getUsers,
@@ -222,5 +265,6 @@ module.exports = {
     updateUser,
     deleteUser,
     getDashboardStats,
-    getProfile
+    getProfile,
+    updateProfile
 };

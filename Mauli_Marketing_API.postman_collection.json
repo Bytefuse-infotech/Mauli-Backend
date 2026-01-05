@@ -166,6 +166,62 @@
 					"response": []
 				},
 				{
+					"name": "Get Profile",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/auth/profile",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"profile"
+							]
+						},
+						"description": "Get current logged in user profile"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Profile",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Jane User Updated\",\n  \"email\": \"jane.updated@example.com\",\n  \"phone\": \"+919876543211\",\n  \"address\": \"123 Main Street, Pune\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/profile",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"profile"
+							]
+						},
+						"description": "Update current user profile"
+					},
+					"response": []
+				},
+				{
 					"name": "Forgot Password",
 					"request": {
 						"method": "POST",
@@ -218,30 +274,6 @@
 							]
 						},
 						"description": "Reset password using valid OTP"
-					},
-					"response": []
-				},
-				{
-					"name": "Get Profile",
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{access_token}}"
-							}
-						],
-						"url": {
-							"raw": "{{base_url}}/auth/profile",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"auth",
-								"profile"
-							]
-						},
-						"description": "Get current logged in user profile"
 					},
 					"response": []
 				},
@@ -1720,12 +1752,11 @@
 							}
 						],
 						"url": {
-							"raw": "{{base_url}}/orders/admin/orders?status=pending&limit=20&page=1",
+							"raw": "{{base_url}}/admin/orders?status=pending&limit=20&page=1",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
-								"orders",
 								"admin",
 								"orders"
 							],
@@ -1737,6 +1768,12 @@
 									"disabled": true
 								},
 								{
+									"key": "payment_method",
+									"value": "cod",
+									"description": "Filter by payment method",
+									"disabled": true
+								},
+								{
 									"key": "limit",
 									"value": "20",
 									"description": "Number of orders per page"
@@ -1745,6 +1782,12 @@
 									"key": "page",
 									"value": "1",
 									"description": "Page number"
+								},
+								{
+									"key": "sort",
+									"value": "-createdAt",
+									"description": "Sort field",
+									"disabled": true
 								}
 							]
 						},
@@ -1768,15 +1811,14 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"status\": \"confirmed\",\n  \"payment_status\": \"paid\"\n}"
+							"raw": "{\n  \"status\": \"confirmed\"\n}"
 						},
 						"url": {
-							"raw": "{{base_url}}/orders/admin/orders/{{order_id}}/status",
+							"raw": "{{base_url}}/admin/orders/{{order_id}}/status",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
-								"orders",
 								"admin",
 								"orders",
 								"{{order_id}}",
@@ -2016,6 +2058,839 @@
 							]
 						},
 						"description": "Verify Razorpay payment signature using HMAC-SHA256. Should be called after successful payment in the Razorpay modal."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Notifications",
+			"item": [
+				{
+					"name": "Get Notifications",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/notifications?page=1&limit=20",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"notifications"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Page number"
+								},
+								{
+									"key": "limit",
+									"value": "20",
+									"description": "Number of notifications per page"
+								}
+							]
+						},
+						"description": "Get user notifications with pagination"
+					},
+					"response": []
+				},
+				{
+					"name": "Mark Notification as Read",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/notifications/:id/read",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"notifications",
+								":id",
+								"read"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						},
+						"description": "Mark a specific notification as read"
+					},
+					"response": []
+				},
+				{
+					"name": "Mark All as Read",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/notifications/read-all",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"notifications",
+								"read-all"
+							]
+						},
+						"description": "Mark all notifications as read"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Notification",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/notifications/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"notifications",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						},
+						"description": "Delete a specific notification"
+					},
+					"response": []
+				},
+				{
+					"name": "Broadcast Notification (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Special Offer\",\n  \"message\": \"Get 20% off on all products\",\n  \"type\": \"promo\",\n  \"data\": {\n    \"campaign_id\": \"SUMMER_2025\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/notifications/broadcast",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"notifications",
+								"broadcast"
+							]
+						},
+						"description": "Broadcast notification to all users (Admin only)"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Firebase Cloud Messaging (FCM)",
+			"item": [
+				{
+					"name": "Register FCM Token",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"token\": \"fcm_token_xyz123\",\n  \"device_info\": {\n    \"device_name\": \"iPhone 12\",\n    \"os\": \"iOS\",\n    \"app_version\": \"1.0.0\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/users/fcm-token",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"users",
+								"fcm-token"
+							]
+						},
+						"description": "Register or update FCM token for push notifications (max 5 tokens per user)"
+					},
+					"response": []
+				},
+				{
+					"name": "Remove FCM Token",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/users/fcm-token?token=fcm_token_xyz123",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"users",
+								"fcm-token"
+							],
+							"query": [
+								{
+									"key": "token",
+									"value": "fcm_token_xyz123",
+									"description": "FCM token to remove"
+								}
+							]
+						},
+						"description": "Remove FCM token from user account"
+					},
+					"response": []
+				},
+				{
+					"name": "Send Push to Specific User (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"user_id\": \"user_123\",\n  \"title\": \"Order Confirmed\",\n  \"message\": \"Your order #ORD123 has been confirmed\",\n  \"data\": {\n    \"order_id\": \"ORD123\",\n    \"deep_link\": \"/orders/ORD123\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/users/admin/push-notifications/send-to-user",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"users",
+								"admin",
+								"push-notifications",
+								"send-to-user"
+							]
+						},
+						"description": "Send push notification to a specific user (Admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Send Push to All Users (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Store Maintenance\",\n  \"message\": \"Store will be under maintenance on 2025-12-25\",\n  \"data\": {\n    \"maintenance_type\": \"scheduled\",\n    \"end_time\": \"2025-12-25T06:00:00Z\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/users/admin/push-notifications/send-to-all",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"users",
+								"admin",
+								"push-notifications",
+								"send-to-all"
+							]
+						},
+						"description": "Send push notification to all users (Admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Users with FCM Tokens (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/users/admin/push-notifications/users",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"users",
+								"admin",
+								"push-notifications",
+								"users"
+							]
+						},
+						"description": "Get list of users with registered FCM tokens (Admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get FCM Status (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/users/admin/push-notifications/status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"users",
+								"admin",
+								"push-notifications",
+								"status"
+							]
+						},
+						"description": "Get FCM integration status and statistics (Admin only)"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Banner Builder (Advanced)",
+			"item": [
+				{
+					"name": "Get Visible Banners (Public)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/banner-builder/visible",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"banner-builder",
+								"visible"
+							]
+						},
+						"description": "Get all visible banners for display (public)"
+					},
+					"response": []
+				},
+				{
+					"name": "Render Banner (Increment Impressions)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/banner-builder/:id/render",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"banner-builder",
+								":id",
+								"render"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						},
+						"description": "Get banner for rendering and increment impressions count"
+					},
+					"response": []
+				},
+				{
+					"name": "Track Banner Click",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"click_data\": {\n    \"source\": \"homepage\",\n    \"user_agent\": \"Mozilla/5.0...\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/banner-builder/:id/click",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"banner-builder",
+								":id",
+								"click"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						},
+						"description": "Track banner click event and increment clicks count"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Banner Builder Template (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/banner-builder/template",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"banner-builder",
+								"template"
+							]
+						},
+						"description": "Get default banner template for creation (Admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "List All Banners (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/banner-builder?page=1&status=published&search=",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"banner-builder"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Page number"
+								},
+								{
+									"key": "status",
+									"value": "published",
+									"description": "Filter by status: published, draft, expired",
+									"disabled": true
+								},
+								{
+									"key": "search",
+									"value": "",
+									"description": "Search by banner name",
+									"disabled": true
+								}
+							]
+						},
+						"description": "List all banners with pagination and filters (Admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Banner Details (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/banner-builder/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"banner-builder",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						},
+						"description": "Get banner details with analytics (Admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Banner Builder (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Summer Sale Banner\",\n  \"status\": \"published\",\n  \"content\": {\n    \"heading\": \"Summer Sale\",\n    \"subheading\": \"Get up to 50% off\",\n    \"cta_text\": \"Shop Now\",\n    \"cta_link\": \"/products?sale=summer\"\n  },\n  \"images\": [\n    {\n      \"url\": \"https://example.com/banner1.jpg\",\n      \"alt_text\": \"Summer sale\"\n    }\n  ],\n  \"priority\": 10,\n  \"impressions\": 0,\n  \"clicks\": 0\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/banner-builder",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"banner-builder"
+							]
+						},
+						"description": "Create a new banner with WYSIWYG editor content (Admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Banner (Admin)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Summer Sale - Updated\",\n  \"status\": \"published\",\n  \"priority\": 15\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/banner-builder/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"banner-builder",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						},
+						"description": "Update banner details (Admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Banner Status (Admin)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"published\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/banner-builder/:id/status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"banner-builder",
+								":id",
+								"status"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						},
+						"description": "Update banner status to published/draft/expired (Admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Duplicate Banner (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/banner-builder/:id/duplicate",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"banner-builder",
+								":id",
+								"duplicate"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						},
+						"description": "Duplicate an existing banner (Admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Banner (Soft) (Admin)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/banner-builder/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"banner-builder",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						},
+						"description": "Soft delete banner (marks as expired) (Admin only)"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Banner (Permanent) (Admin)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/banner-builder/:id/permanent",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"banner-builder",
+								":id",
+								"permanent"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": ""
+								}
+							]
+						},
+						"description": "Permanently delete banner from database (Admin only)"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "File Uploads",
+			"item": [
+				{
+					"name": "Upload Single Image",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "image",
+									"type": "file",
+									"src": "",
+									"disabled": false
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/upload/image",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"upload",
+								"image"
+							]
+						},
+						"description": "Upload a single image (Admin/Manager only). Supports JPG, PNG, GIF, WebP"
+					},
+					"response": []
+				},
+				{
+					"name": "Upload Multiple Images",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "images",
+									"type": "file",
+									"src": [],
+									"disabled": false
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/upload/images",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"upload",
+								"images"
+							]
+						},
+						"description": "Upload multiple images at once (max 5 files). Admin/Manager only. Returns array of URLs"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Health Check",
+			"item": [
+				{
+					"name": "Health Status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/health",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"health"
+							]
+						},
+						"description": "Check API health status"
 					},
 					"response": []
 				}

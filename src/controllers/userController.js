@@ -241,13 +241,17 @@ const updateProfile = async (req, res) => {
             const updatedUser = await user.save();
 
             res.json({
-                _id: updatedUser._id,
-                name: updatedUser.name,
-                email: updatedUser.email,
-                phone: updatedUser.phone,
-                role: updatedUser.role,
-                address: updatedUser.address,
-                is_active: updatedUser.is_active
+                success: true,
+                message: 'Profile updated successfully',
+                user: {
+                    _id: updatedUser._id,
+                    name: updatedUser.name,
+                    email: updatedUser.email,
+                    phone: updatedUser.phone,
+                    role: updatedUser.role,
+                    address: updatedUser.address,
+                    is_active: updatedUser.is_active
+                }
             });
         } else {
             res.status(404).json({ message: 'User not found' });

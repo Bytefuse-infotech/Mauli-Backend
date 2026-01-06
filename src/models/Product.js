@@ -27,13 +27,29 @@ const ProductSchema = new mongoose.Schema({
         default: 0,
         min: [0, 'Discount cannot be negative']
     },
+    units: {
+        type: [String],
+        enum: {
+            values: ['box', 'dozen'],
+            message: 'Units must contain only box and/or dozen'
+        },
+        validate: {
+            validator: function (v) {
+                return Array.isArray(v) && v.length > 0 && v.length <= 2;
+            },
+            message: 'At least one unit must be selected'
+        },
+        default: ['dozen'],
+        required: [true, 'At least one unit is required']
+    },
+    // Deprecated: keeping for backward compatibility migration
     unit: {
         type: String,
         enum: {
             values: ['box', 'dozen', 'both'],
             message: 'Unit must be either box, dozen, or both'
         },
-        required: [true, 'Unit is required']
+        default: null
     },
     description: {
         type: String,

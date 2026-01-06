@@ -1,12 +1,41 @@
 const Product = require('../models/Product');
 
+// Helper function to normalize units from legacy format or new format
+function normalizeUnits(payload) {
+    // If units array is provided, use it
+    if (payload.units && Array.isArray(payload.units) && payload.units.length > 0) {
+        return payload.units;
+    }
+
+    // If legacy unit field is provided, convert it to units array
+    if (payload.unit) {
+        if (payload.unit === 'both') {
+            return ['box', 'dozen'];
+        } else if (['box', 'dozen'].includes(payload.unit)) {
+            return [payload.unit];
+        }
+    }
+
+    // Default to dozen if nothing provided
+    return ['dozen'];
+}
+
 // @desc    Create product
 // @route   POST /api/v1/admin/products
 // @access  Private/Admin
 const createProduct = async (req, res) => {
     try {
         const payload = req.validatedBody;
-        const product = new Product(payload);
+
+        // Normalize units from legacy or new format
+        const normalizedUnits = normalizeUnits(payload);
+
+        // Create product with normalized units
+        const product = new Product({
+            ...payload,
+            units: normalizedUnits,
+            unit: null // Clear legacy field
+        });
         await product.save();
 
         return res.status(201).json({
@@ -120,6 +149,12 @@ const updateProduct = async (req, res) => {
     try {
         const { id } = req.params;
         const updates = req.validatedBody;
+
+        // Normalize units if provided
+        if (updates.units || updates.unit) {
+            updates.units = normalizeUnits(updates);
+            updates.unit = null; // Clear legacy field
+        }
 
         const product = await Product.findByIdAndUpdate(
             id,

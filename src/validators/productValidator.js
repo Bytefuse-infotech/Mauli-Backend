@@ -5,7 +5,9 @@ const createProductSchema = Joi.object({
     mrp: Joi.number().precision(2).min(0).required(),
     price: Joi.number().precision(2).min(0).required(),
     discount: Joi.number().precision(2).min(0).optional(), // Auto-calculated from MRP - price
-    unit: Joi.string().valid('box', 'dozen', 'both').required(),
+    // Support both new units array and legacy unit string
+    units: Joi.array().items(Joi.string().valid('box', 'dozen')).min(1).max(2).optional(),
+    unit: Joi.string().valid('box', 'dozen', 'both').optional(), // Legacy field for backward compatibility
     description: Joi.string().allow('', null).max(2000).default(''),
     images: Joi.array().items(
         Joi.object({
@@ -21,7 +23,9 @@ const updateProductSchema = Joi.object({
     mrp: Joi.number().precision(2).min(0),
     price: Joi.number().precision(2).min(0),
     discount: Joi.number().precision(2).min(0).optional(), // Auto-calculated from MRP - price
-    unit: Joi.string().valid('box', 'dozen', 'both'),
+    // Support both new units array and legacy unit string
+    units: Joi.array().items(Joi.string().valid('box', 'dozen')).min(1).max(2).optional(),
+    unit: Joi.string().valid('box', 'dozen', 'both').optional(), // Legacy field for backward compatibility
     description: Joi.string().allow('', null).max(2000),
     images: Joi.array().items(
         Joi.object({

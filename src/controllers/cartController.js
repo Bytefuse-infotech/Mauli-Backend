@@ -52,10 +52,15 @@ const addToCart = async (req, res) => {
         }
 
         // Verify unit is valid for this product
-        if (product.unit !== 'both' && product.unit !== unit) {
+        // Support both new units array and legacy unit field for backward compatibility
+        const availableUnits = product.units && Array.isArray(product.units) && product.units.length > 0
+            ? product.units
+            : (product.unit === 'both' ? ['box', 'dozen'] : [product.unit]);
+
+        if (!availableUnits.includes(unit)) {
             return res.status(400).json({
                 success: false,
-                message: `Product only available in ${product.unit}`
+                message: `Product only available in: ${availableUnits.join(', ')}`
             });
         }
 

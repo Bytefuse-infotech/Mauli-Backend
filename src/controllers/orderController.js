@@ -47,9 +47,12 @@ const createOrder = async (req, res) => {
         }
 
         // Calculate subtotal
+        // Note: price_at_add IS the selling price (product.price), not MRP
+        // discount_at_add is the discount amount off MRP (for display purposes)
+        // So itemTotal should just be price_at_add * quantity
         let subtotal = 0;
         const orderItems = cart.items.map(item => {
-            const itemPrice = item.price_at_add - item.discount_at_add;
+            const itemPrice = item.price_at_add;  // This is already the selling price
             const itemTotal = itemPrice * item.quantity;
             subtotal += itemTotal;
 

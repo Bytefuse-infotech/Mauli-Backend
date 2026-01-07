@@ -381,6 +381,72 @@ const refresh = async (req, res) => {
     }
 };
 
+// @desc    Update Password (for authenticated users)
+// @route   PUT /api/v1/auth/update-password
+// @access  Private
+const updatePassword = async (req, res) => {
+    try {
+        const { currentPassword, newPassword, confirmPassword } = req.body;
+
+        // Validate input
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            return res.status(400).json({
+                success: false,
+                message: 'Please provide current password, new password, and confirm password'
+            });
+        }
+
+        if (newPassword !== confirmPassword) {
+            return res.status(400).json({
+                success: false,
+                message: 'New password and confirm password do not match'
+            });
+        }
+
+        if (newPassword.length < 6) {
+            return res.status(400).json({
+                success: false,
+                message: 'Password must be at least 6 characters'
+            });
+        }
+
+        // Get user with password
+        const user = await User.findById(req.user._id).select('+password_hash');
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        // Verify current password
+        const isMatch = await authService.comparePassword(currentPassword, user.password_hash);
+        if (!isMatch) {
+            return res.status(401).json({
+                success: false,
+                message: 'Current password is incorrect'
+            });
+        }
+
+        // Hash and save new password
+        user.password_hash = await authService.hashPassword(newPassword);
+        await user.save();
+
+        res.status(200).json({
+            success: true,
+            message: 'Password updated successfully'
+        });
+
+    } catch (error) {
+        console.error('Update password error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server Error'
+        });
+    }
+};
+
 
 
 module.exports = {
@@ -390,5 +456,6 @@ module.exports = {
     logout,
     refresh,
     forgotPassword,
-    resetPassword
+    resetPassword,
+    updatePassword
 };

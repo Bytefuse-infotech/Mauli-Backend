@@ -7,7 +7,8 @@ const {
     signup,
     verifySignup,
     forgotPassword,
-    resetPassword
+    resetPassword,
+    updatePassword
 } = require('../controllers/authController');
 const { getProfile, updateProfile } = require('../controllers/userController');
 const { protect } = require('../middleware/authMiddleware');
@@ -19,6 +20,7 @@ router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
 router.get('/profile', protect, getProfile);
 router.put('/profile', protect, updateProfile);
+router.put('/update-password', protect, updatePassword);
 router.post('/logout', protect, logout);
 router.post('/refresh', refresh);
 

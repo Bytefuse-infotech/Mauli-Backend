@@ -225,7 +225,7 @@ const createOrder = async (req, res) => {
 const getOrders = async (req, res) => {
     try {
         const page = Math.max(1, parseInt(req.query.page) || 1);
-        const page_size = Math.min(50, Math.max(10, parseInt(req.query.page_size) || 10));
+        const page_size = parseInt(req.query.page_size) || 1000;
         const skip = (page - 1) * page_size;
 
         const filter = { user_id: req.user._id };

@@ -10,7 +10,7 @@ const {
     resetPassword,
     updatePassword
 } = require('../controllers/authController');
-const { getProfile, updateProfile } = require('../controllers/userController');
+const { getProfile, updateProfile, getSavingsSummary } = require('../controllers/userController');
 const { protect } = require('../middleware/authMiddleware');
 
 router.post('/signup', signup);
@@ -20,6 +20,7 @@ router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
 router.get('/profile', protect, getProfile);
 router.put('/profile', protect, updateProfile);
+router.get('/savings-summary', protect, getSavingsSummary);
 router.put('/update-password', protect, updatePassword);
 router.post('/logout', protect, logout);
 router.post('/refresh', refresh);

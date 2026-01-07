@@ -15,7 +15,8 @@ const createOrder = async (req, res) => {
             delivery_slot,
             payment_method = 'cod',
             notes = '',
-            distance_km = 0
+            distance_km = 0,
+            is_pickup = false
         } = req.body;
 
         // Validate required fields
@@ -70,13 +71,15 @@ const createOrder = async (req, res) => {
         // Get store config and compute totals
         const storeConfig = await StoreConfig.getConfig();
 
-        // Calculate delivery fee
+        // Calculate delivery fee (0 for pickup orders)
         let delivery_fee = 0;
-        if (storeConfig.delivery_fee.type === 'flat') {
-            delivery_fee = storeConfig.delivery_fee.base_fee;
-        } else if (storeConfig.delivery_fee.type === 'per_km') {
-            delivery_fee = storeConfig.delivery_fee.base_fee +
-                (storeConfig.delivery_fee.rate * distance_km);
+        if (!is_pickup) {
+            if (storeConfig.delivery_fee.type === 'flat') {
+                delivery_fee = storeConfig.delivery_fee.base_fee;
+            } else if (storeConfig.delivery_fee.type === 'per_km') {
+                delivery_fee = storeConfig.delivery_fee.base_fee +
+                    (storeConfig.delivery_fee.rate * distance_km);
+            }
         }
 
         // Calculate discount

@@ -47,9 +47,6 @@ const CartSchema = new mongoose.Schema({
     timestamps: true
 });
 
-// Index for quick user lookup
-CartSchema.index({ user_id: 1 });
-
 // Method to calculate cart totals
 CartSchema.methods.calculateTotals = function () {
     let subtotal = 0;

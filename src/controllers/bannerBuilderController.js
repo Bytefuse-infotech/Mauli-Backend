@@ -19,9 +19,15 @@ const getAllBannerBuilders = async (req, res) => {
             query.status = { $ne: 'expired' };
         }
 
-        // Search by name
-        if (req.query.search) {
-            query.$text = { $search: req.query.search };
+        // Search by name - use regex for short queries, text search for longer
+        if (req.query.search && req.query.search.length >= 2) {
+            if (req.query.search.length < 4) {
+                // Regex for short queries (2-3 chars)
+                query.name = { $regex: req.query.search, $options: 'i' };
+            } else {
+                // Text search for longer queries (4+ chars)
+                query.$text = { $search: req.query.search };
+            }
         }
 
         const count = await BannerBuilder.countDocuments(query);

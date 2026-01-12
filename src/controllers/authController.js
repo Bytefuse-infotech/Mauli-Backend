@@ -17,7 +17,7 @@ const requestOtp = async (req, res) => {
         // Generate OTP
         const otp = authService.generateOtp();
         const otp_hash = await authService.hashPassword(otp);
-        const otp_expires_at = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+        const otp_expires_at = new Date(Date.now() + 2 * 60 * 1000); // 2 minutes
 
         // Check if user exists
         let user = await User.findOne({ phone });
@@ -55,6 +55,9 @@ const requestOtp = async (req, res) => {
             success: true,
             message: `OTP sent to ${phone}`,
             isNewUser: !user.is_active,
+            otp_expires_in_seconds: 120, // 2 minutes
+            // Rate limit info from middleware
+            rate_limit: req.rateLimitInfo,
             // In dev mode, send OTP in response for testing
             dev_otp: process.env.NODE_ENV === 'development' ? otp : undefined
         });
@@ -171,7 +174,7 @@ const resendOtp = async (req, res) => {
         // Generate new OTP
         const otp = authService.generateOtp();
         const otp_hash = await authService.hashPassword(otp);
-        const otp_expires_at = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+        const otp_expires_at = new Date(Date.now() + 2 * 60 * 1000); // 2 minutes
 
         user.otp_hash = otp_hash;
         user.otp_expires_at = otp_expires_at;
@@ -183,6 +186,9 @@ const resendOtp = async (req, res) => {
         res.status(200).json({
             success: true,
             message: `OTP resent to ${phone}`,
+            otp_expires_in_seconds: 120, // 2 minutes
+            // Rate limit info from middleware
+            rate_limit: req.rateLimitInfo,
             // In dev mode, send OTP in response for testing
             dev_otp: process.env.NODE_ENV === 'development' ? otp : undefined
         });

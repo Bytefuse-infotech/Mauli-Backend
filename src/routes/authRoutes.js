@@ -19,11 +19,15 @@ const {
     updatePassword
 } = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
+const { otpRateLimit, checkOtpRateLimit } = require('../middleware/rateLimitMiddleware');
 
-// New OTP-based authentication routes
-router.post('/request-otp', requestOtp);
-router.post('/verify-otp', verifyOtp);
-router.post('/resend-otp', resendOtp);
+// New OTP-based authentication routes with rate limiting
+router.post('/request-otp', otpRateLimit, requestOtp);
+router.post('/verify-otp', verifyOtp);  // No rate limit on verification
+router.post('/resend-otp', otpRateLimit, resendOtp);
+
+// Check rate limit status (for UI)
+router.get('/check-rate-limit', checkOtpRateLimit);
 
 // Common routes
 router.get('/profile', protect, getProfile);

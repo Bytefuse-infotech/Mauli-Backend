@@ -24,7 +24,8 @@ const userSchema = new mongoose.Schema({
     },
     password_hash: {
         type: String,
-        required: [true, 'Please add a password'],
+        // Password is now optional - using OTP-based authentication
+        // required: [true, 'Please add a password'],
         select: false // Don't return password by default
     },
     role: {

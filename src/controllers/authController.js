@@ -3,55 +3,48 @@ const UserSession = require('../models/UserSession');
 const authService = require('../services/authService');
 const sendOtp = require('../utils/sendOtp');
 
-// @desc    Register user (Step 1)
-// @route   POST /api/v1/auth/signup
+// @desc    Request OTP for login/signup
+// @route   POST /api/v1/auth/request-otp
 // @access  Public
-const signup = async (req, res) => {
+const requestOtp = async (req, res) => {
     try {
-        const { name, email, phone, password } = req.body;
+        const { phone, name, email } = req.body;
 
-        if (!name || !email || !phone || !password) {
-            return res.status(400).json({ message: 'Please provide all required fields' });
+        if (!phone) {
+            return res.status(400).json({ message: 'Please provide phone number' });
         }
-
-        // Check if user exists
-        let user = await User.findOne({ $or: [{ email }, { phone }] });
-
-        if (user) {
-            if (user.is_active) {
-                return res.status(400).json({ message: 'User already exists' });
-            }
-            // If user exists but is inactive, we could resend OTP or update details.
-            // For simplicity, if they aren't active, we update their details and new password/OTP
-            // CAUTION: This allows overwriting unverified accounts. This is usually desired behavior.
-        }
-
-        const password_hash = await authService.hashPassword(password);
 
         // Generate OTP
         const otp = authService.generateOtp();
         const otp_hash = await authService.hashPassword(otp);
         const otp_expires_at = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
+        // Check if user exists
+        let user = await User.findOne({ phone });
+
         if (!user) {
+            // New user - create account with minimal info
+            // Name and email are optional at this stage
             user = await User.create({
-                name,
-                email,
                 phone,
-                password_hash,
+                name: name || 'User',
+                email: email || `${phone}@temp.com`, // Temporary email if not provided
                 role: 'customer',
-                is_active: false, // Inactive until OTP verified
+                is_active: false, // Will be activated after OTP verification
                 otp_hash,
                 otp_expires_at
             });
         } else {
-            // Update existing unverified user
-            user.name = name;
-            user.email = email;
-            user.phone = phone; // Ensure phone is updated if it was different
-            user.password_hash = password_hash;
+            // Existing user - just update OTP
             user.otp_hash = otp_hash;
             user.otp_expires_at = otp_expires_at;
+
+            // Update name and email if provided and user is not yet verified
+            if (!user.is_active) {
+                if (name) user.name = name;
+                if (email) user.email = email;
+            }
+
             await user.save();
         }
 
@@ -61,8 +54,9 @@ const signup = async (req, res) => {
         res.status(200).json({
             success: true,
             message: `OTP sent to ${phone}`,
-            // In dev mode, maybe send OTP in response for testing?
-            // dev_otp: process.env.NODE_ENV === 'development' ? otp : undefined
+            isNewUser: !user.is_active,
+            // In dev mode, send OTP in response for testing
+            dev_otp: process.env.NODE_ENV === 'development' ? otp : undefined
         });
 
     } catch (error) {
@@ -71,12 +65,12 @@ const signup = async (req, res) => {
     }
 };
 
-// @desc    Verify Signup OTP (Step 2)
-// @route   POST /api/v1/auth/verify-signup
+// @desc    Verify OTP and login
+// @route   POST /api/v1/auth/verify-otp
 // @access  Public
-const verifySignup = async (req, res) => {
+const verifyOtp = async (req, res) => {
     try {
-        const { phone, otp } = req.body;
+        const { phone, otp, name, email } = req.body;
 
         if (!phone || !otp) {
             return res.status(400).json({ message: 'Please provide phone and OTP' });
@@ -85,19 +79,15 @@ const verifySignup = async (req, res) => {
         const user = await User.findOne({ phone }).select('+otp_hash');
 
         if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-
-        if (user.is_active) {
-            return res.status(400).json({ message: 'User already verified, please login' });
+            return res.status(404).json({ message: 'User not found. Please request OTP first.' });
         }
 
         if (!user.otp_hash || !user.otp_expires_at) {
-            return res.status(400).json({ message: 'No OTP request found' });
+            return res.status(400).json({ message: 'No OTP request found. Please request a new OTP.' });
         }
 
         if (user.otp_expires_at < new Date()) {
-            return res.status(400).json({ message: 'OTP expired' });
+            return res.status(400).json({ message: 'OTP expired. Please request a new OTP.' });
         }
 
         const isMatch = await authService.comparePassword(otp, user.otp_hash);
@@ -105,165 +95,24 @@ const verifySignup = async (req, res) => {
             return res.status(400).json({ message: 'Invalid OTP' });
         }
 
-        // Activate User
-        user.is_active = true;
-        user.is_phone_verified = true;
-        user.otp_hash = undefined;
-        user.otp_expires_at = undefined;
-        await user.save();
-
-        // Auto Login
-        const ip = req.ip || req.connection.remoteAddress;
-        await user.recordLogin({ ip });
-
-        const session = await UserSession.create({
-            user_id: user._id,
-            start_at: new Date(),
-            ip: ip,
-            user_agent: req.headers['user-agent'],
-        });
-
-        const accessToken = authService.generateAccessToken(user);
-        const refreshToken = authService.generateRefreshToken(user);
-
-        res.status(200).json({
-            success: true,
-            message: 'User verified and logged in',
-            accessToken,
-            refreshToken,
-            user: {
-                _id: user._id,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-                phone: user.phone
-            },
-            sessionId: session._id
-        });
-
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Server Error' });
-    }
-};
-
-// @desc    Forgot Password - Send OTP
-// @route   POST /api/v1/auth/forgot-password
-// @access  Public
-const forgotPassword = async (req, res) => {
-    try {
-        const { phone } = req.body;
-
-        if (!phone) {
-            return res.status(400).json({ message: 'Please provide phone number' });
-        }
-
-        const user = await User.findOne({ phone });
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-
-        // Generate OTP
-        const otp = authService.generateOtp();
-        const otp_hash = await authService.hashPassword(otp);
-        const otp_expires_at = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
-
-        user.otp_hash = otp_hash;
-        user.otp_expires_at = otp_expires_at;
-        await user.save();
-
-        await sendOtp(phone, otp, 'phone');
-
-        res.status(200).json({
-            success: true,
-            message: `OTP sent to ${phone}`
-        });
-
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Server Error' });
-    }
-};
-
-// @desc    Reset Password
-// @route   POST /api/v1/auth/reset-password
-// @access  Public
-const resetPassword = async (req, res) => {
-    try {
-        const { phone, otp, newPassword } = req.body;
-
-        if (!phone || !otp || !newPassword) {
-            return res.status(400).json({ message: 'Please provide phone, OTP, and new password' });
-        }
-
-        const user = await User.findOne({ phone }).select('+otp_hash');
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-
-        if (!user.otp_hash || !user.otp_expires_at) {
-            return res.status(400).json({ message: 'No OTP request found' });
-        }
-
-        if (user.otp_expires_at < new Date()) {
-            return res.status(400).json({ message: 'OTP expired' });
-        }
-
-        const isMatch = await authService.comparePassword(otp, user.otp_hash);
-        if (!isMatch) {
-            return res.status(400).json({ message: 'Invalid OTP' });
-        }
-
-        // Reset Password
-        user.password_hash = await authService.hashPassword(newPassword);
-        user.otp_hash = undefined;
-        user.otp_expires_at = undefined;
-
-        // Optionally revoke all sessions here for security
-
-        await user.save();
-
-        res.status(200).json({
-            success: true,
-            message: 'Password reset successfully. Please login with new password.'
-        });
-
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Server Error' });
-    }
-};
-// @access  Public
-const login = async (req, res) => {
-    try {
-        const { email, password, phone } = req.body;
-
-        if (!password) {
-            return res.status(400).json({ message: 'Please provide password' });
-        }
-
-        let user;
-        if (email) {
-            user = await User.findOne({ email }).select('+password_hash');
-        } else if (phone) {
-            user = await User.findOne({ phone }).select('+password_hash');
-        } else {
-            return res.status(400).json({ message: 'Please provide email or phone' });
-        }
-
-        if (!user) {
-            return res.status(401).json({ message: 'Invalid credentials' });
-        }
-
-        // Check password
-        const isMatch = await authService.comparePassword(password, user.password_hash);
-        if (!isMatch) {
-            return res.status(401).json({ message: 'Invalid credentials' });
-        }
-
+        // If this is first time login (signup), update user details if provided
         if (!user.is_active) {
-            return res.status(401).json({ message: 'User is inactive' });
+            user.is_active = true;
+            user.is_phone_verified = true;
+
+            // Update name and email if provided during verification
+            if (name && name !== 'User') {
+                user.name = name;
+            }
+            if (email && !email.includes('@temp.com')) {
+                user.email = email;
+            }
         }
+
+        // Clear OTP
+        user.otp_hash = undefined;
+        user.otp_expires_at = undefined;
+        await user.save();
 
         // Record Login
         const ip = req.ip || req.connection.remoteAddress;
@@ -275,26 +124,129 @@ const login = async (req, res) => {
             start_at: new Date(),
             ip: ip,
             user_agent: req.headers['user-agent'],
-            device: 'unknown' // could parse user-agent
         });
 
         // Generate Tokens
-        // We can embed sessionId in token if we want strict session binding, 
-        // but for now let's keep it standard.
         const accessToken = authService.generateAccessToken(user);
         const refreshToken = authService.generateRefreshToken(user);
 
         res.status(200).json({
             success: true,
+            message: 'Login successful',
             accessToken,
             refreshToken,
             user: {
                 _id: user._id,
                 name: user.name,
                 email: user.email,
-                role: user.role
+                phone: user.phone,
+                role: user.role,
+                is_phone_verified: user.is_phone_verified
             },
             sessionId: session._id
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
+// @desc    Resend OTP
+// @route   POST /api/v1/auth/resend-otp
+// @access  Public
+const resendOtp = async (req, res) => {
+    try {
+        const { phone } = req.body;
+
+        if (!phone) {
+            return res.status(400).json({ message: 'Please provide phone number' });
+        }
+
+        const user = await User.findOne({ phone });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found. Please request OTP first.' });
+        }
+
+        // Generate new OTP
+        const otp = authService.generateOtp();
+        const otp_hash = await authService.hashPassword(otp);
+        const otp_expires_at = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+        user.otp_hash = otp_hash;
+        user.otp_expires_at = otp_expires_at;
+        await user.save();
+
+        // Send OTP
+        await sendOtp(phone, otp, 'phone');
+
+        res.status(200).json({
+            success: true,
+            message: `OTP resent to ${phone}`,
+            // In dev mode, send OTP in response for testing
+            dev_otp: process.env.NODE_ENV === 'development' ? otp : undefined
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
+// @desc    Update user profile
+// @route   PUT /api/v1/auth/profile
+// @access  Private
+const updateProfile = async (req, res) => {
+    try {
+        const { name, email, address } = req.body;
+        const userId = req.user._id;
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Update fields if provided
+        if (name) user.name = name;
+        if (email) user.email = email;
+        if (address) user.address = address;
+
+        await user.save();
+
+        res.status(200).json({
+            success: true,
+            message: 'Profile updated successfully',
+            user: {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                phone: user.phone,
+                role: user.role,
+                address: user.address,
+                is_phone_verified: user.is_phone_verified
+            }
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
+// @desc    Get user profile
+// @route   GET /api/v1/auth/profile
+// @access  Private
+const getProfile = async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id).select('-otp_hash -otp_expires_at');
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        res.status(200).json({
+            success: true,
+            user
         });
 
     } catch (error) {
@@ -308,7 +260,6 @@ const login = async (req, res) => {
 // @access  Private
 const logout = async (req, res) => {
     try {
-        // Client should send sessionId to close specific session
         const { sessionId, hadOrder } = req.body;
         const userId = req.user._id;
 
@@ -326,8 +277,6 @@ const logout = async (req, res) => {
                 await session.save();
 
                 // Update User Stats
-                // Note: user.recordLogout(sessionDuration, hadOrder)
-                // We need to fetch the user document with methods
                 const user = await User.findById(userId);
                 if (user) {
                     await user.recordLogout({
@@ -337,8 +286,6 @@ const logout = async (req, res) => {
                 }
             }
         }
-
-        // In a real scenario with Redis blacklist, we would add the token to blacklist here.
 
         res.status(200).json({ success: true, message: 'Logged out successfully' });
     } catch (error) {
@@ -359,7 +306,6 @@ const refresh = async (req, res) => {
 
     try {
         const decoded = authService.verifyRefreshToken(refreshToken);
-
         const user = await User.findById(decoded.id);
 
         if (!user) {
@@ -381,80 +327,113 @@ const refresh = async (req, res) => {
     }
 };
 
-// @desc    Update Password (for authenticated users)
-// @route   PUT /api/v1/auth/update-password
-// @access  Private
-const updatePassword = async (req, res) => {
+// Legacy endpoints for backward compatibility - will be removed later
+
+// @desc    Legacy signup endpoint - redirects to request-otp
+// @route   POST /api/v1/auth/signup
+// @access  Public
+const signup = async (req, res) => {
+    // Extract phone, name, email from request and redirect to requestOtp
+    const { phone, name, email } = req.body;
+    req.body = { phone, name, email };
+    return requestOtp(req, res);
+};
+
+// @desc    Legacy verify-signup endpoint - redirects to verify-otp
+// @route   POST /api/v1/auth/verify-signup
+// @access  Public
+const verifySignup = async (req, res) => {
+    return verifyOtp(req, res);
+};
+
+// @desc    Legacy login endpoint - now requires OTP
+// @route   POST /api/v1/auth/login
+// @access  Public
+const login = async (req, res) => {
     try {
-        const { currentPassword, newPassword, confirmPassword } = req.body;
+        const { email, phone, password } = req.body;
 
-        // Validate input
-        if (!currentPassword || !newPassword || !confirmPassword) {
+        // If password is provided, inform user about new OTP-only flow
+        if (password) {
             return res.status(400).json({
                 success: false,
-                message: 'Please provide current password, new password, and confirm password'
+                message: 'Password authentication has been disabled. Please use OTP login instead.',
+                useOtp: true
             });
         }
 
-        if (newPassword !== confirmPassword) {
-            return res.status(400).json({
-                success: false,
-                message: 'New password and confirm password do not match'
-            });
+        // Redirect to OTP request
+        const identifier = phone || email;
+        if (!identifier) {
+            return res.status(400).json({ message: 'Please provide phone number or email' });
         }
 
-        if (newPassword.length < 6) {
-            return res.status(400).json({
-                success: false,
-                message: 'Password must be at least 6 characters'
-            });
+        // If email provided, find user by email and get phone
+        let phoneToUse = phone;
+        if (email && !phone) {
+            const user = await User.findOne({ email });
+            if (!user) {
+                return res.status(404).json({ message: 'User not found' });
+            }
+            phoneToUse = user.phone;
         }
 
-        // Get user with password
-        const user = await User.findById(req.user._id).select('+password_hash');
-
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: 'User not found'
-            });
-        }
-
-        // Verify current password
-        const isMatch = await authService.comparePassword(currentPassword, user.password_hash);
-        if (!isMatch) {
-            return res.status(401).json({
-                success: false,
-                message: 'Current password is incorrect'
-            });
-        }
-
-        // Hash and save new password
-        user.password_hash = await authService.hashPassword(newPassword);
-        await user.save();
-
-        res.status(200).json({
-            success: true,
-            message: 'Password updated successfully'
-        });
+        req.body = { phone: phoneToUse };
+        return requestOtp(req, res);
 
     } catch (error) {
-        console.error('Update password error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Server Error'
-        });
+        console.error(error);
+        res.status(500).json({ message: 'Server Error' });
     }
 };
 
+// Password-related endpoints are no longer needed but kept for migration period
 
+// @desc    Forgot Password - Not needed with OTP login
+// @route   POST /api/v1/auth/forgot-password
+// @access  Public
+const forgotPassword = async (req, res) => {
+    return res.status(400).json({
+        success: false,
+        message: 'Password authentication has been disabled. Please use OTP login instead.',
+        useOtp: true
+    });
+};
+
+// @desc    Reset Password - Not needed with OTP login
+// @route   POST /api/v1/auth/reset-password
+// @access  Public
+const resetPassword = async (req, res) => {
+    return res.status(400).json({
+        success: false,
+        message: 'Password authentication has been disabled. Please use OTP login instead.',
+        useOtp: true
+    });
+};
+
+// @desc    Update Password - Not needed with OTP login
+// @route   PUT /api/v1/auth/update-password
+// @access  Private
+const updatePassword = async (req, res) => {
+    return res.status(400).json({
+        success: false,
+        message: 'Password authentication has been disabled. This endpoint is no longer available.',
+        useOtp: true
+    });
+};
 
 module.exports = {
+    requestOtp,
+    verifyOtp,
+    resendOtp,
+    updateProfile,
+    getProfile,
+    logout,
+    refresh,
+    // Legacy endpoints
     signup,
     verifySignup,
     login,
-    logout,
-    refresh,
     forgotPassword,
     resetPassword,
     updatePassword

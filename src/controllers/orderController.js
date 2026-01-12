@@ -15,7 +15,8 @@ const createOrder = async (req, res) => {
             delivery_slot,
             payment_method = 'cod',
             notes = '',
-            distance_km = 0
+            distance_km = 0,
+            is_pickup = false
         } = req.body;
 
         // Validate required fields
@@ -47,9 +48,12 @@ const createOrder = async (req, res) => {
         }
 
         // Calculate subtotal
+        // Note: price_at_add IS the selling price (product.price), not MRP
+        // discount_at_add is the discount amount off MRP (for display purposes)
+        // So itemTotal should just be price_at_add * quantity
         let subtotal = 0;
         const orderItems = cart.items.map(item => {
-            const itemPrice = item.price_at_add - item.discount_at_add;
+            const itemPrice = item.price_at_add;  // This is already the selling price
             const itemTotal = itemPrice * item.quantity;
             subtotal += itemTotal;
 
@@ -67,13 +71,15 @@ const createOrder = async (req, res) => {
         // Get store config and compute totals
         const storeConfig = await StoreConfig.getConfig();
 
-        // Calculate delivery fee
+        // Calculate delivery fee (0 for pickup orders)
         let delivery_fee = 0;
-        if (storeConfig.delivery_fee.type === 'flat') {
-            delivery_fee = storeConfig.delivery_fee.base_fee;
-        } else if (storeConfig.delivery_fee.type === 'per_km') {
-            delivery_fee = storeConfig.delivery_fee.base_fee +
-                (storeConfig.delivery_fee.rate * distance_km);
+        if (!is_pickup) {
+            if (storeConfig.delivery_fee.type === 'flat') {
+                delivery_fee = storeConfig.delivery_fee.base_fee;
+            } else if (storeConfig.delivery_fee.type === 'per_km') {
+                delivery_fee = storeConfig.delivery_fee.base_fee +
+                    (storeConfig.delivery_fee.rate * distance_km);
+            }
         }
 
         // Calculate discount
@@ -219,7 +225,7 @@ const createOrder = async (req, res) => {
 const getOrders = async (req, res) => {
     try {
         const page = Math.max(1, parseInt(req.query.page) || 1);
-        const page_size = Math.min(50, Math.max(10, parseInt(req.query.page_size) || 10));
+        const page_size = parseInt(req.query.page_size) || 1000;
         const skip = (page - 1) * page_size;
 
         const filter = { user_id: req.user._id };

@@ -108,9 +108,21 @@ StoreConfigSchema.statics.getConfig = async function (tenant_id = null) {
             cart_discounts: [
                 {
                     discount_type: 'flat',
+                    min_cart_value: 500,
+                    value: 50,
+                    priority: 1
+                },
+                {
+                    discount_type: 'flat',
                     min_cart_value: 1000,
-                    value: 100,
-                    priority: 10
+                    value: 150,
+                    priority: 2
+                },
+                {
+                    discount_type: 'flat',
+                    min_cart_value: 2000,
+                    value: 400,
+                    priority: 3
                 }
             ],
             is_delivery_enabled: true

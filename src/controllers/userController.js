@@ -262,6 +262,52 @@ const updateProfile = async (req, res) => {
     }
 };
 
+// @desc    Get user's savings summary
+// @route   GET /api/v1/users/savings-summary
+// @access  Private
+const getSavingsSummary = async (req, res) => {
+    try {
+        const Order = require('../models/Order');
+
+        const orders = await Order.find({
+            user_id: req.user._id,
+            status: 'delivered'
+        }).lean();
+
+        let totalProductDiscount = 0;
+        let totalExtraDiscount = 0;
+        let totalSpends = 0;
+
+        orders.forEach(order => {
+            totalExtraDiscount += (order.discount_amount || 0);
+            totalSpends += (order.total_amount || 0);
+            if (order.items) {
+                order.items.forEach(item => {
+                    totalProductDiscount += (item.discount || 0) * item.quantity;
+                });
+            }
+        });
+
+        const totalSavings = totalProductDiscount + totalExtraDiscount;
+        const mrpValue = totalSpends + totalSavings;
+        const avgSavingsPerOrder = orders.length > 0 ? Math.round(totalSavings / orders.length) : 0;
+
+        return res.json({
+            success: true,
+            data: {
+                totalSavings,
+                totalSpends,
+                mrpValue,
+                orderCount: orders.length,
+                avgSavingsPerOrder
+            }
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
 module.exports = {
     createUser,
     getUsers,
@@ -270,5 +316,6 @@ module.exports = {
     deleteUser,
     getDashboardStats,
     getProfile,
-    updateProfile
+    updateProfile,
+    getSavingsSummary
 };

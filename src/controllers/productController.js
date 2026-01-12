@@ -110,9 +110,15 @@ const listProducts = async (req, res) => {
             filter.category_id = req.query.category_id;
         }
 
-        // Text search
-        if (req.query.q) {
-            filter.$text = { $search: req.query.q };
+        // Text search - use regex for short queries, text search for longer
+        if (req.query.q && req.query.q.length >= 2) {
+            if (req.query.q.length < 4) {
+                // Regex for short queries (2-3 chars)
+                filter.name = { $regex: req.query.q, $options: 'i' };
+            } else {
+                // Text search for longer queries (4+ chars)
+                filter.$text = { $search: req.query.q };
+            }
         }
 
         const [total, products] = await Promise.all([

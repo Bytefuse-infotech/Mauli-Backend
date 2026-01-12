@@ -52,15 +52,45 @@ const addToCart = async (req, res) => {
         }
 
         // Verify unit is valid for this product
-        // Support both new units array and legacy unit field for backward compatibility
-        const availableUnits = product.units && Array.isArray(product.units) && product.units.length > 0
-            ? product.units
-            : (product.unit === 'both' ? ['box', 'dozen'] : [product.unit]);
+        // Merge both units array and legacy unit field to handle data inconsistency
+        let rawUnits = [];
 
-        if (!availableUnits.includes(unit)) {
+        // Add units from the units array if present
+        if (product.units && Array.isArray(product.units) && product.units.length > 0) {
+            rawUnits.push(...product.units);
+        }
+
+        // Also add the legacy unit field if present (handles data inconsistency)
+        if (product.unit && product.unit !== 'both') {
+            rawUnits.push(product.unit);
+        } else if (product.unit === 'both') {
+            rawUnits.push('box', 'dozen');
+        }
+
+        // Deduplicate
+        rawUnits = [...new Set(rawUnits)];
+
+        // Fallback if no units found
+        if (rawUnits.length === 0) {
+            rawUnits = ['dozen'];
+        }
+
+        // Normalize to lowercase for case-insensitive comparison
+        const availableUnits = rawUnits.map(u => u?.toLowerCase?.() || u);
+        const normalizedUnit = unit?.toLowerCase?.() || unit;
+
+        if (!availableUnits.includes(normalizedUnit)) {
+            console.log('[CartController] Unit validation FAILED:', {
+                requestedUnit: unit,
+                normalizedUnit,
+                productUnit: product.unit,
+                productUnits: product.units,
+                rawUnits,
+                availableUnits
+            });
             return res.status(400).json({
                 success: false,
-                message: `Product only available in: ${availableUnits.join(', ')}`
+                message: `Product only available in: ${rawUnits.join(', ')}`
             });
         }
 

@@ -11,6 +11,7 @@ const {
     getProfile,
     updateProfile
 } = require('../controllers/authController');
+const { getSavingsSummary } = require('../controllers/userController');
 const { protect } = require('../middleware/authMiddleware');
 const { otpRateLimit, checkOtpRateLimit } = require('../middleware/rateLimitMiddleware');
 const OtpAttempt = require('../models/OtpAttempt');
@@ -35,6 +36,7 @@ router.delete('/clear-rate-limits', async (req, res) => {
 
 // Common routes
 router.get('/profile', protect, getProfile);
+router.get('/savings-summary', protect, getSavingsSummary);
 router.put('/profile', protect, updateProfile);
 router.post('/logout', protect, logout);
 router.post('/refresh', refresh);

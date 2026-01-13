@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const authRoutes = require('./authRoutes');
+const adminAuthRoutes = require('./adminAuthRoutes');
 const userRoutes = require('./userRoutes');
 const sessionRoutes = require('./sessionRoutes');
 
@@ -34,6 +35,7 @@ router.use('/content', contentRoutes); // /content and /content/admin/:key
 router.use('/', dashboardRoutes); // /admin/dashboard/stats
 
 router.use('/auth', authRoutes);
+router.use('/admin/auth', adminAuthRoutes); // Admin email/password login
 router.use('/admin/users', userRoutes);
 router.use('/', sessionRoutes);
 router.use('/razorpay', razorpayRoutes); // /razorpay routes
@@ -41,3 +43,4 @@ router.use('/notifications', notificationRoutes); // /notifications routes
 router.use('/users', fcmRoutes); // /users/fcm-token and /users/admin/push-notifications
 
 module.exports = router;
+

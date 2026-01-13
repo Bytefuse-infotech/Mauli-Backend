@@ -335,99 +335,6 @@ const refresh = async (req, res) => {
 
 // Legacy endpoints for backward compatibility - will be removed later
 
-// @desc    Legacy signup endpoint - redirects to request-otp
-// @route   POST /api/v1/auth/signup
-// @access  Public
-const signup = async (req, res) => {
-    // Extract phone, name, email from request and redirect to requestOtp
-    const { phone, name, email } = req.body;
-    req.body = { phone, name, email };
-    return requestOtp(req, res);
-};
-
-// @desc    Legacy verify-signup endpoint - redirects to verify-otp
-// @route   POST /api/v1/auth/verify-signup
-// @access  Public
-const verifySignup = async (req, res) => {
-    return verifyOtp(req, res);
-};
-
-// @desc    Legacy login endpoint - now requires OTP
-// @route   POST /api/v1/auth/login
-// @access  Public
-const login = async (req, res) => {
-    try {
-        const { email, phone, password } = req.body;
-
-        // If password is provided, inform user about new OTP-only flow
-        if (password) {
-            return res.status(400).json({
-                success: false,
-                message: 'Password authentication has been disabled. Please use OTP login instead.',
-                useOtp: true
-            });
-        }
-
-        // Redirect to OTP request
-        const identifier = phone || email;
-        if (!identifier) {
-            return res.status(400).json({ message: 'Please provide phone number or email' });
-        }
-
-        // If email provided, find user by email and get phone
-        let phoneToUse = phone;
-        if (email && !phone) {
-            const user = await User.findOne({ email });
-            if (!user) {
-                return res.status(404).json({ message: 'User not found' });
-            }
-            phoneToUse = user.phone;
-        }
-
-        req.body = { phone: phoneToUse };
-        return requestOtp(req, res);
-
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Server Error' });
-    }
-};
-
-// Password-related endpoints are no longer needed but kept for migration period
-
-// @desc    Forgot Password - Not needed with OTP login
-// @route   POST /api/v1/auth/forgot-password
-// @access  Public
-const forgotPassword = async (req, res) => {
-    return res.status(400).json({
-        success: false,
-        message: 'Password authentication has been disabled. Please use OTP login instead.',
-        useOtp: true
-    });
-};
-
-// @desc    Reset Password - Not needed with OTP login
-// @route   POST /api/v1/auth/reset-password
-// @access  Public
-const resetPassword = async (req, res) => {
-    return res.status(400).json({
-        success: false,
-        message: 'Password authentication has been disabled. Please use OTP login instead.',
-        useOtp: true
-    });
-};
-
-// @desc    Update Password - Not needed with OTP login
-// @route   PUT /api/v1/auth/update-password
-// @access  Private
-const updatePassword = async (req, res) => {
-    return res.status(400).json({
-        success: false,
-        message: 'Password authentication has been disabled. This endpoint is no longer available.',
-        useOtp: true
-    });
-};
-
 module.exports = {
     requestOtp,
     verifyOtp,
@@ -435,12 +342,5 @@ module.exports = {
     updateProfile,
     getProfile,
     logout,
-    refresh,
-    // Legacy endpoints
-    signup,
-    verifySignup,
-    login,
-    forgotPassword,
-    resetPassword,
-    updatePassword
+    refresh
 };

@@ -8,7 +8,7 @@ const userSchema = new mongoose.Schema({
     },
     phone: {
         type: String,
-        required: [true, 'Please add a phone number'],
+        // Phone is now optional - users can add it later from profile
         index: true
     },
     email: {

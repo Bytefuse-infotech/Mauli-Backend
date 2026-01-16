@@ -7,7 +7,7 @@ const authService = require('../services/authService');
 // @access  Private
 const updateProfile = async (req, res) => {
     try {
-        const { name, email, address } = req.body;
+        const { name, email, phone, address } = req.body;
         const userId = req.user._id;
 
         const user = await User.findById(userId);
@@ -17,8 +17,69 @@ const updateProfile = async (req, res) => {
 
         // Update fields if provided
         if (name) user.name = name;
-        if (email) user.email = email;
         if (address) user.address = address;
+
+        // Allow email update (for users who signed up with phone)
+        if (email && email !== user.email) {
+            // Skip if it's a placeholder email
+            if (!email.endsWith('@user.mauli.com')) {
+                // Validate email format
+                const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+                if (!emailRegex.test(email)) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Please enter a valid email address'
+                    });
+                }
+
+                // Check if email already exists
+                const existingUser = await User.findOne({
+                    email: email.toLowerCase(),
+                    _id: { $ne: userId }
+                });
+
+                if (existingUser) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'This email is already registered'
+                    });
+                }
+
+                user.email = email.toLowerCase();
+                user.is_email_verified = false; // Reset verification when email changes
+            }
+        }
+
+        // Allow phone update (for users who signed up with email)
+        if (phone !== undefined) {
+            // If user is trying to add/update phone
+            if (phone && phone !== user.phone) {
+                // Validate phone format
+                const formattedPhone = phone.startsWith('+') ? phone : `+91${phone.replace(/\D/g, '')}`;
+                if (!/^\+91\d{10}$/.test(formattedPhone)) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Please enter a valid 10-digit mobile number'
+                    });
+                }
+
+                // Check if phone number already exists
+                const existingUser = await User.findOne({
+                    phone: formattedPhone,
+                    _id: { $ne: userId } // Exclude current user
+                });
+
+                if (existingUser) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'This phone number is already registered'
+                    });
+                }
+
+                user.phone = formattedPhone;
+                user.is_phone_verified = false; // Reset verification when phone changes
+            }
+        }
 
         await user.save();
 
@@ -72,34 +133,46 @@ const logout = async (req, res) => {
         const { sessionId, hadOrder } = req.body;
         const userId = req.user._id;
 
-        if (sessionId) {
-            const session = await UserSession.findOne({ _id: sessionId, user_id: userId });
-
-            if (session) {
-                const endAt = new Date();
-                const duration = Math.round((endAt - session.start_at) / 1000);
-
-                session.end_at = endAt;
-                session.duration_seconds = duration;
-                if (hadOrder !== undefined) session.had_order = hadOrder;
-
-                await session.save();
-
-                // Update User Stats
-                const user = await User.findById(userId);
-                if (user) {
-                    await user.recordLogout({
-                        sessionDurationSeconds: duration,
-                        hadOrder: session.had_order
-                    });
-                }
-            }
-        }
-
+        // Send response immediately for instant client-side logout
         res.status(200).json({ success: true, message: 'Logged out successfully' });
+
+        // Perform session and user updates asynchronously in background
+        // This doesn't block the response
+        if (sessionId) {
+            (async () => {
+                try {
+                    const session = await UserSession.findOne({ _id: sessionId, user_id: userId });
+
+                    if (session) {
+                        const endAt = new Date();
+                        const duration = Math.round((endAt - session.start_at) / 1000);
+
+                        session.end_at = endAt;
+                        session.duration_seconds = duration;
+                        if (hadOrder !== undefined) session.had_order = hadOrder;
+
+                        await session.save();
+
+                        // Update User Stats
+                        const user = await User.findById(userId);
+                        if (user) {
+                            await user.recordLogout({
+                                sessionDurationSeconds: duration,
+                                hadOrder: session.had_order
+                            });
+                        }
+                    }
+                } catch (error) {
+                    console.error('Background logout processing error:', error);
+                }
+            })();
+        }
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Server Error' });
+        // Only send error response if we haven't already sent the success response
+        if (!res.headersSent) {
+            res.status(500).json({ message: 'Server Error' });
+        }
     }
 };
 
@@ -177,15 +250,15 @@ const register = async (req, res) => {
 
         if (identifierIsEmail) {
             userEmail = authIdentifier.toLowerCase();
-            // Generate unique placeholder phone
-            userPhone = `+91${Date.now().toString().slice(-10)}`;
+            // Don't generate placeholder phone - user can add it later from profile
+            userPhone = null;
         } else {
             userPhone = formatPhone(authIdentifier);
             // Validate phone format
             if (!/^\+91\d{10}$/.test(userPhone)) {
                 return res.status(400).json({ message: 'Please enter a valid 10-digit mobile number' });
             }
-            // Generate placeholder email
+            // Generate placeholder email for schema compatibility
             userEmail = `${userPhone.replace('+', '')}@user.mauli.com`;
         }
 

@@ -333,64 +333,156 @@ const refresh = async (req, res) => {
     }
 };
 
-// Legacy endpoints for backward compatibility - will be removed later
-
-// @desc    Legacy signup endpoint - redirects to request-otp
-// @route   POST /api/v1/auth/signup
+// @desc    Register new user with phone and password
+// @route   POST /api/v1/auth/register
 // @access  Public
-const signup = async (req, res) => {
-    // Extract phone, name, email from request and redirect to requestOtp
-    const { phone, name, email } = req.body;
-    req.body = { phone, name, email };
-    return requestOtp(req, res);
+const register = async (req, res) => {
+    try {
+        const { phone, password, name } = req.body;
+
+        if (!phone || !password || !name) {
+            return res.status(400).json({ message: 'Please provide phone, password, and name' });
+        }
+
+        if (password.length < 6) {
+            return res.status(400).json({ message: 'Password must be at least 6 characters' });
+        }
+
+        // Check if user already exists
+        const existingUser = await User.findOne({ phone });
+        if (existingUser) {
+            return res.status(400).json({ message: 'User with this phone number already exists' });
+        }
+
+        // Hash password
+        const password_hash = await authService.hashPassword(password);
+
+        // Create user
+        const user = await User.create({
+            phone,
+            name,
+            email: `${phone}@user.mauli.com`, // Auto-generate email placeholder
+            password_hash,
+            role: 'customer',
+            is_active: true,
+            is_phone_verified: true
+        });
+
+        // Record Login
+        const ip = req.ip || req.connection.remoteAddress;
+        await user.recordLogin({ ip });
+
+        // Create Session
+        const session = await UserSession.create({
+            user_id: user._id,
+            start_at: new Date(),
+            ip: ip,
+            user_agent: req.headers['user-agent'],
+        });
+
+        // Generate Tokens
+        const accessToken = authService.generateAccessToken(user);
+        const refreshToken = authService.generateRefreshToken(user);
+
+        res.status(201).json({
+            success: true,
+            message: 'Registration successful',
+            accessToken,
+            refreshToken,
+            user: {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                phone: user.phone,
+                role: user.role,
+                is_phone_verified: user.is_phone_verified
+            },
+            sessionId: session._id
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: error.message || 'Server Error' });
+    }
 };
 
-// @desc    Legacy verify-signup endpoint - redirects to verify-otp
-// @route   POST /api/v1/auth/verify-signup
-// @access  Public
-const verifySignup = async (req, res) => {
-    return verifyOtp(req, res);
-};
-
-// @desc    Legacy login endpoint - now requires OTP
+// @desc    Login with phone and password
 // @route   POST /api/v1/auth/login
 // @access  Public
 const login = async (req, res) => {
     try {
-        const { email, phone, password } = req.body;
+        const { phone, password } = req.body;
 
-        // If password is provided, inform user about new OTP-only flow
-        if (password) {
-            return res.status(400).json({
-                success: false,
-                message: 'Password authentication has been disabled. Please use OTP login instead.',
-                useOtp: true
-            });
+        if (!phone || !password) {
+            return res.status(400).json({ message: 'Please provide phone and password' });
         }
 
-        // Redirect to OTP request
-        const identifier = phone || email;
-        if (!identifier) {
-            return res.status(400).json({ message: 'Please provide phone number or email' });
+        // Find user by phone and include password_hash
+        const user = await User.findOne({ phone }).select('+password_hash');
+
+        if (!user) {
+            return res.status(401).json({ message: 'Invalid credentials' });
         }
 
-        // If email provided, find user by email and get phone
-        let phoneToUse = phone;
-        if (email && !phone) {
-            const user = await User.findOne({ email });
-            if (!user) {
-                return res.status(404).json({ message: 'User not found' });
-            }
-            phoneToUse = user.phone;
+        if (!user.password_hash) {
+            return res.status(401).json({ message: 'Please register with a password first' });
         }
 
-        req.body = { phone: phoneToUse };
-        return requestOtp(req, res);
+        // Compare password
+        const isMatch = await authService.comparePassword(password, user.password_hash);
+        if (!isMatch) {
+            return res.status(401).json({ message: 'Invalid credentials' });
+        }
+
+        if (!user.is_active) {
+            return res.status(401).json({ message: 'Account is inactive. Please contact support.' });
+        }
+
+        // Record Login
+        const ip = req.ip || req.connection.remoteAddress;
+        await user.recordLogin({ ip });
+
+        // Create Session
+        const session = await UserSession.create({
+            user_id: user._id,
+            start_at: new Date(),
+            ip: ip,
+            user_agent: req.headers['user-agent'],
+        });
+
+        // Generate Tokens
+        const accessToken = authService.generateAccessToken(user);
+        const refreshToken = authService.generateRefreshToken(user);
+
+        res.status(200).json({
+            success: true,
+            message: 'Login successful',
+            accessToken,
+            refreshToken,
+            user: {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                phone: user.phone,
+                role: user.role,
+                is_phone_verified: user.is_phone_verified
+            },
+            sessionId: session._id
+        });
 
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Server Error' });
     }
+};
+
+// Legacy endpoints kept for backward compatibility
+const signup = async (req, res) => {
+    return register(req, res);
+};
+
+const verifySignup = async (req, res) => {
+    return res.status(400).json({ message: 'OTP verification is no longer required. Please use /register instead.' });
 };
 
 // Password-related endpoints are no longer needed but kept for migration period
@@ -417,15 +509,76 @@ const resetPassword = async (req, res) => {
     });
 };
 
-// @desc    Update Password - Not needed with OTP login
+// @desc    Update Password
 // @route   PUT /api/v1/auth/update-password
 // @access  Private
 const updatePassword = async (req, res) => {
-    return res.status(400).json({
-        success: false,
-        message: 'Password authentication has been disabled. This endpoint is no longer available.',
-        useOtp: true
-    });
+    try {
+        const { currentPassword, newPassword, confirmPassword } = req.body;
+        const userId = req.user._id;
+
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            return res.status(400).json({
+                success: false,
+                message: 'Please provide current password, new password, and confirm password'
+            });
+        }
+
+        if (newPassword !== confirmPassword) {
+            return res.status(400).json({
+                success: false,
+                message: 'New password and confirm password do not match'
+            });
+        }
+
+        if (newPassword.length < 6) {
+            return res.status(400).json({
+                success: false,
+                message: 'Password must be at least 6 characters'
+            });
+        }
+
+        const user = await User.findById(userId).select('+password_hash');
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        if (!user.password_hash) {
+            return res.status(400).json({
+                success: false,
+                message: 'No password set for this account'
+            });
+        }
+
+        // Verify current password
+        const isMatch = await authService.comparePassword(currentPassword, user.password_hash);
+        if (!isMatch) {
+            return res.status(401).json({
+                success: false,
+                message: 'Current password is incorrect'
+            });
+        }
+
+        // Hash new password and save
+        user.password_hash = await authService.hashPassword(newPassword);
+        await user.save();
+
+        res.status(200).json({
+            success: true,
+            message: 'Password updated successfully'
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            success: false,
+            message: 'Server Error'
+        });
+    }
 };
 
 module.exports = {
@@ -436,10 +589,12 @@ module.exports = {
     getProfile,
     logout,
     refresh,
+    // Password-based auth
+    login,
+    register,
     // Legacy endpoints
     signup,
     verifySignup,
-    login,
     forgotPassword,
     resetPassword,
     updatePassword

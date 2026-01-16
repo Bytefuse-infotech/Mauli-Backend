@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const {
-    // New OTP-based auth endpoints
+    // OTP-based auth endpoints (kept for backward compatibility)
     requestOtp,
     verifyOtp,
     resendOtp,
@@ -10,8 +10,10 @@ const {
     refresh,
     getProfile,
     updateProfile,
-    // Legacy endpoints (for backward compatibility)
+    // Password-based auth
     login,
+    register,
+    // Legacy endpoints (for backward compatibility)
     signup,
     verifySignup,
     forgotPassword,
@@ -21,9 +23,13 @@ const {
 const { protect } = require('../middleware/authMiddleware');
 const { otpRateLimit, checkOtpRateLimit } = require('../middleware/rateLimitMiddleware');
 
-// New OTP-based authentication routes with rate limiting
+// Password-based authentication routes (primary)
+router.post('/login', login);
+router.post('/register', register);
+
+// OTP-based authentication routes (kept for backward compatibility)
 router.post('/request-otp', otpRateLimit, requestOtp);
-router.post('/verify-otp', verifyOtp);  // No rate limit on verification
+router.post('/verify-otp', verifyOtp);
 router.post('/resend-otp', otpRateLimit, resendOtp);
 
 // Check rate limit status (for UI)
@@ -35,10 +41,9 @@ router.put('/profile', protect, updateProfile);
 router.post('/logout', protect, logout);
 router.post('/refresh', refresh);
 
-// Legacy routes (backward compatibility - will redirect to OTP flow)
+// Legacy routes (backward compatibility)
 router.post('/signup', signup);
 router.post('/verify-signup', verifySignup);
-router.post('/login', login);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
 router.put('/update-password', protect, updatePassword);

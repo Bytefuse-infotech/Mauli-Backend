@@ -359,8 +359,13 @@ const register = async (req, res) => {
                 });
             }
 
-            // Generate placeholder email for schema compatibility
-            userEmail = `${userPhone.replace('+', '')}@user.mauli.com`;
+            // Use user-provided email if available; otherwise, generate placeholder
+            if (email && isEmail(email)) {
+                userEmail = email.toLowerCase();
+            } else {
+                // Generate placeholder email for schema compatibility
+                userEmail = `${userPhone.replace('+', '')}@user.mauli.com`;
+            }
         }
 
         // Check if user already exists by email or phone

@@ -228,6 +228,67 @@ const formatPhone = (phone) => {
     return cleaned;
 };
 
+// @desc    Check if a user exists by phone or email
+// @route   POST /api/v1/auth/check-user
+// @access  Public
+const checkUserExists = async (req, res) => {
+    try {
+        const { identifier } = req.body;
+
+        if (!identifier) {
+            return res.status(400).json({
+                success: false,
+                message: 'Identifier is required'
+            });
+        }
+
+        const identifierIsEmail = isEmail(identifier);
+        let userEmail, userPhone;
+
+        if (identifierIsEmail) {
+            userEmail = identifier.toLowerCase();
+        } else {
+            userPhone = formatPhone(identifier);
+            if (!/^\+91\d{10}$/.test(userPhone)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Please enter a valid 10-digit mobile number'
+                });
+            }
+            // Also generate the placeholder email just in case
+            userEmail = `${userPhone.replace('+', '')}@user.mauli.com`;
+        }
+
+        // Check if user exists by email or phone
+        const existingUser = await User.findOne({
+            $or: [
+                { email: userEmail },
+                { phone: userPhone }
+            ]
+        });
+
+        if (existingUser) {
+            return res.status(200).json({
+                success: true,
+                exists: true,
+                message: `User with this ${identifierIsEmail ? 'email' : 'phone number'} already exists. Please login instead.`
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            exists: false,
+            message: 'User does not exist'
+        });
+    } catch (error) {
+        console.error('Error in checkUserExists:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Server Error'
+        });
+    }
+};
+
 // @desc    Register new user with email/phone and password
 // @route   POST /api/v1/auth/register
 // @access  Public
@@ -767,6 +828,7 @@ module.exports = {
     // Password-based auth (kept for admin/legacy)
     login,
     register,
+    checkUserExists,
     // Firebase phone OTP auth
     firebaseLogin,
     // OTP-based password reset

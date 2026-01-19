@@ -9,6 +9,7 @@ const {
     // Password-based auth
     login,
     register,
+    checkUserExists,
     // Firebase phone OTP auth
     firebaseLogin,
     // OTP-based password reset
@@ -25,6 +26,9 @@ const { protect } = require('../middleware/authMiddleware');
 
 // Firebase phone OTP authentication (primary for customers)
 router.post('/firebase-login', firebaseLogin);
+
+// Check if user exists (before OTP signup)
+router.post('/check-user', checkUserExists);
 
 // Password-based authentication routes (for admin/legacy)
 router.post('/login', login);

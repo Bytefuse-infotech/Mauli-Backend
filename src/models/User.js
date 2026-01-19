@@ -13,8 +13,9 @@ const userSchema = new mongoose.Schema({
     },
     email: {
         type: String,
-        required: [true, 'Please add an email'],
+        // Email is now optional - users can add it later from profile
         unique: true,
+        sparse: true,  // Allow multiple null values with unique index
         lowercase: true,
         match: [
             /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,

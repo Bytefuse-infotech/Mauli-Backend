@@ -359,25 +359,24 @@ const register = async (req, res) => {
                 });
             }
 
-            // Use user-provided email if available; otherwise, generate placeholder
+            // Use user-provided email if available; otherwise, leave it null
             if (email && isEmail(email)) {
                 userEmail = email.toLowerCase();
             } else {
-                // Generate placeholder email for schema compatibility
-                userEmail = `${userPhone.replace('+', '')}@user.mauli.com`;
+                userEmail = null;  // No placeholder - email is optional
             }
         }
 
         // Check if user already exists by email or phone
-        const existingUser = await User.findOne({
-            $or: [
-                { email: userEmail },
-                { phone: userPhone }
-            ]
-        });
+        const existingUserQuery = { phone: userPhone };
+        if (userEmail) {
+            existingUserQuery.$or = [{ email: userEmail }, { phone: userPhone }];
+            delete existingUserQuery.phone;
+        }
+        const existingUser = await User.findOne(existingUserQuery);
 
         if (existingUser) {
-            const field = existingUser.email === userEmail ? 'email' : 'phone number';
+            const field = userEmail && existingUser.email === userEmail ? 'email' : 'phone number';
             return res.status(400).json({ message: `User with this ${field} already exists` });
         }
 
@@ -680,13 +679,11 @@ const firebaseLogin = async (req, res) => {
                 });
             }
 
-            // Generate placeholder email for schema compatibility
-            const placeholderEmail = `${phoneNumber.replace('+', '')}@user.mauli.com`;
-
+            // Email is optional - don't generate placeholder
             user = await User.create({
                 phone: phoneNumber,
                 name: name.trim(),
-                email: placeholderEmail,
+                email: null,  // No placeholder - email is optional
                 role: 'customer',
                 is_active: true,
                 is_phone_verified: true,

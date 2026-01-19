@@ -132,6 +132,7 @@ const deleteNotification = async (req, res) => {
 // Helper function to create notification internally
 const createNotification = async (recipientId, title, message, type = 'system', data = {}) => {
     try {
+        // Create in-app notification record
         const notification = await Notification.create({
             recipient: recipientId,
             title,
@@ -139,6 +140,24 @@ const createNotification = async (recipientId, title, message, type = 'system', 
             type,
             data
         });
+
+        // Send FCM push notification asynchronously
+        // We don't await this to keep the response fast
+        (async () => {
+            try {
+                const { sendPushNotification } = require('../utils/firebase');
+                const user = await User.findById(recipientId).select('fcm_tokens');
+
+                if (user && user.fcm_tokens && user.fcm_tokens.length > 0) {
+                    const tokens = user.fcm_tokens.map(t => t.token);
+                    await sendPushNotification(tokens, title, message, data);
+                    console.log(`[FCM] Push sent for user ${recipientId}`);
+                }
+            } catch (err) {
+                console.error('[FCM] Error sending push during createNotification:', err.message);
+            }
+        })();
+
         return notification;
     } catch (error) {
         console.error('Error creating internal notification:', error);

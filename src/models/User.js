@@ -18,7 +18,7 @@ const userSchema = new mongoose.Schema({
         sparse: true,  // Allow multiple null values with unique index
         lowercase: true,
         match: [
-            /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
+            /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
             'Please add a valid email'
         ],
         index: true

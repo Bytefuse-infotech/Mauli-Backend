@@ -25,7 +25,8 @@ const updateProfile = async (req, res) => {
             // Skip if it's a placeholder email
             if (!email.endsWith('@user.mauli.com')) {
                 // Validate email format
-                const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+                // Use permissive regex to support modern TLDs and aliases
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                 if (!emailRegex.test(email)) {
                     return res.status(400).json({
                         success: false,
@@ -212,7 +213,8 @@ const refresh = async (req, res) => {
 
 // Helper function to detect if identifier is email or phone
 const isEmail = (identifier) => {
-    return /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(identifier);
+    // Use permissive regex consistent with frontend to allow aliases (e.g. +)
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier);
 };
 
 // Helper to format phone number
@@ -380,6 +382,7 @@ const register = async (req, res) => {
             return res.status(400).json({ message: `User with this ${field} already exists` });
         }
 
+        // Hash password
         // Hash password
         const password_hash = await authService.hashPassword(password);
 

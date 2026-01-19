@@ -130,7 +130,8 @@ const deleteNotification = async (req, res) => {
 };
 
 // Helper function to create notification internally
-const createNotification = async (recipientId, title, message, type = 'system', data = {}) => {
+// skipPush: Set to true when the caller already sent the push notification (e.g., admin manual push)
+const createNotification = async (recipientId, title, message, type = 'system', data = {}, skipPush = false) => {
     try {
         // Create in-app notification record
         const notification = await Notification.create({
@@ -141,22 +142,23 @@ const createNotification = async (recipientId, title, message, type = 'system', 
             data
         });
 
-        // Send FCM push notification asynchronously
-        // We don't await this to keep the response fast
-        (async () => {
-            try {
-                const { sendPushNotification } = require('../utils/firebase');
-                const user = await User.findById(recipientId).select('fcm_tokens');
+        // Send FCM push notification asynchronously (unless skipPush is true)
+        if (!skipPush) {
+            (async () => {
+                try {
+                    const { sendPushNotification } = require('../utils/firebase');
+                    const user = await User.findById(recipientId).select('fcm_tokens');
 
-                if (user && user.fcm_tokens && user.fcm_tokens.length > 0) {
-                    const tokens = user.fcm_tokens.map(t => t.token);
-                    await sendPushNotification(tokens, title, message, data);
-                    console.log(`[FCM] Push sent for user ${recipientId}`);
+                    if (user && user.fcm_tokens && user.fcm_tokens.length > 0) {
+                        const tokens = user.fcm_tokens.map(t => t.token);
+                        await sendPushNotification(tokens, title, message, data);
+                        console.log(`[FCM] Push sent for user ${recipientId}`);
+                    }
+                } catch (err) {
+                    console.error('[FCM] Error sending push during createNotification:', err.message);
                 }
-            } catch (err) {
-                console.error('[FCM] Error sending push during createNotification:', err.message);
-            }
-        })();
+            })();
+        }
 
         return notification;
     } catch (error) {

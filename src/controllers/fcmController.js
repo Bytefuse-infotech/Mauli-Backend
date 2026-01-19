@@ -141,8 +141,8 @@ const sendPushToUser = async (req, res) => {
 
         const result = await sendPushNotification(tokens, title, body, data);
 
-        // Also create in-app notification
-        await createNotification(userId, title, body, 'system', data);
+        // Also create in-app notification (skipPush=true since we already sent it above)
+        await createNotification(userId, title, body, 'system', data, true);
 
         // Clean up failed tokens
         if (result.failedTokens && result.failedTokens.length > 0) {

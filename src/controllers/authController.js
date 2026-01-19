@@ -233,7 +233,7 @@ const formatPhone = (phone) => {
 // @access  Public
 const register = async (req, res) => {
     try {
-        const { identifier, password, name, phone, email } = req.body;
+        const { identifier, password, name, phone, email, idToken } = req.body;
 
         // Support both old format (phone/email fields) and new format (identifier field)
         const authIdentifier = identifier || phone || email;
@@ -247,7 +247,7 @@ const register = async (req, res) => {
         }
 
         const identifierIsEmail = isEmail(authIdentifier);
-        let userEmail, userPhone;
+        let userEmail, userPhone, firebaseUid;
 
         if (identifierIsEmail) {
             userEmail = authIdentifier.toLowerCase();
@@ -259,6 +259,45 @@ const register = async (req, res) => {
             if (!/^\+91\d{10}$/.test(userPhone)) {
                 return res.status(400).json({ message: 'Please enter a valid 10-digit mobile number' });
             }
+
+            // ENFORCE OTP VERIFICATION FOR PHONE REGISTRATION
+            if (!idToken) {
+                return res.status(401).json({
+                    success: false,
+                    message: 'Mobile number verification required. Please verify with OTP first.'
+                });
+            }
+
+            try {
+                const { verifyIdToken } = require('../utils/firebase');
+                const decoded = await verifyIdToken(idToken);
+
+                if (!decoded || !decoded.phone) {
+                    return res.status(401).json({
+                        success: false,
+                        message: 'Invalid verification token. Please try again.'
+                    });
+                }
+
+                // Ensure the token's phone matches the requested phone
+                const tokenPhone = formatPhone(decoded.phone);
+                if (tokenPhone !== userPhone) {
+                    console.warn(`Phone mismatch: token(${tokenPhone}) vs request(${userPhone})`);
+                    return res.status(401).json({
+                        success: false,
+                        message: 'Verification token does not match the provided phone number.'
+                    });
+                }
+
+                firebaseUid = decoded.uid;
+            } catch (err) {
+                console.error('Registration token verification failed:', err);
+                return res.status(401).json({
+                    success: false,
+                    message: 'Verification failed. Please try again.'
+                });
+            }
+
             // Generate placeholder email for schema compatibility
             userEmail = `${userPhone.replace('+', '')}@user.mauli.com`;
         }
@@ -288,7 +327,8 @@ const register = async (req, res) => {
             role: 'customer',
             is_active: true,
             is_phone_verified: !identifierIsEmail,
-            is_email_verified: identifierIsEmail
+            is_email_verified: identifierIsEmail,
+            firebase_uid: firebaseUid
         });
 
         // Record Login

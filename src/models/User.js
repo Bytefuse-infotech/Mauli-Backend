@@ -98,6 +98,12 @@ const userSchema = new mongoose.Schema({
     otp_expires_at: {
         type: Date
     },
+    // Firebase Auth user ID for phone OTP authentication
+    firebase_uid: {
+        type: String,
+        index: true,
+        sparse: true
+    },
     // FCM tokens for push notifications (multiple devices per user)
     fcm_tokens: [{
         token: {

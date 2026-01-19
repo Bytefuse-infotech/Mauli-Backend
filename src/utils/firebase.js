@@ -95,6 +95,30 @@ const sendPushNotification = async (tokens, title, body, data = {}) => {
                 body
             },
             data: stringData,
+            // Web push specific configuration for PWA
+            webpush: {
+                notification: {
+                    title,
+                    body,
+                    icon: '/assets/icons/icon-192x192.png',
+                    badge: '/assets/icons/icon-72x72.png',
+                    vibrate: [200, 100, 200],
+                    requireInteraction: false,
+                    tag: 'mauli-notification'
+                },
+                fcm_options: {
+                    link: stringData.url || stringData.path || '/'
+                }
+            },
+            // Android specific (for future mobile app)
+            android: {
+                notification: {
+                    icon: 'notification_icon',
+                    color: '#38a169',
+                    clickAction: 'FLUTTER_NOTIFICATION_CLICK'
+                },
+                priority: 'high'
+            },
             tokens: validTokens
         };
 
@@ -134,9 +158,37 @@ const sendPushToDevice = async (token, title, body, data = {}) => {
     return sendPushNotification([token], title, body, data);
 };
 
+/**
+ * Verify Firebase ID Token from client
+ * Used for phone OTP authentication
+ * @param {string} idToken - Firebase ID token from client
+ * @returns {Promise<object|null>} - Decoded token with phone number and uid
+ */
+const verifyIdToken = async (idToken) => {
+    const firebaseAdmin = getFirebaseAdmin();
+
+    if (!firebaseAdmin) {
+        console.error('Firebase Admin not initialized. Cannot verify ID token.');
+        return null;
+    }
+
+    try {
+        const decodedToken = await firebaseAdmin.auth().verifyIdToken(idToken);
+        return {
+            uid: decodedToken.uid,
+            phone: decodedToken.phone_number,
+            email: decodedToken.email || null
+        };
+    } catch (error) {
+        console.error('Firebase ID token verification failed:', error.message);
+        return null;
+    }
+};
+
 module.exports = {
     initializeFirebase,
     getFirebaseAdmin,
     sendPushNotification,
-    sendPushToDevice
+    sendPushToDevice,
+    verifyIdToken
 };

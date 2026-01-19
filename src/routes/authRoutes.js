@@ -9,6 +9,10 @@ const {
     // Password-based auth
     login,
     register,
+    // Firebase phone OTP auth
+    firebaseLogin,
+    // OTP-based password reset
+    resetPasswordOtp,
     // Legacy endpoints (for backward compatibility)
     signup,
     verifySignup,
@@ -19,9 +23,15 @@ const {
 const { getSavingsSummary } = require('../controllers/userController');
 const { protect } = require('../middleware/authMiddleware');
 
-// Password-based authentication routes (primary)
+// Firebase phone OTP authentication (primary for customers)
+router.post('/firebase-login', firebaseLogin);
+
+// Password-based authentication routes (for admin/legacy)
 router.post('/login', login);
 router.post('/register', register);
+
+// OTP-based password reset
+router.post('/reset-password-otp', resetPasswordOtp);
 
 // Common routes
 router.get('/profile', protect, getProfile);
@@ -38,3 +48,4 @@ router.post('/reset-password', resetPassword);
 router.put('/update-password', protect, updatePassword);
 
 module.exports = router;
+

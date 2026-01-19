@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const UserSession = require('../models/UserSession');
 const authService = require('../services/authService');
+const bcrypt = require('bcryptjs');
 
 // @desc    Update user profile
 // @route   PUT /api/v1/auth/profile
@@ -357,21 +358,37 @@ const login = async (req, res) => {
         const user = await User.findOne(query).select('+password_hash');
 
         if (!user) {
-            return res.status(401).json({ message: 'Invalid credentials' });
+            return res.status(401).json({
+                success: false,
+                message: 'No account found with this email/phone. Please create a new account.',
+                errorType: 'USER_NOT_FOUND'
+            });
         }
 
         if (!user.password_hash) {
-            return res.status(401).json({ message: 'Please register with a password first' });
+            return res.status(401).json({
+                success: false,
+                message: 'Please register with a password first',
+                errorType: 'NO_PASSWORD'
+            });
         }
 
         // Compare password
         const isMatch = await authService.comparePassword(password, user.password_hash);
         if (!isMatch) {
-            return res.status(401).json({ message: 'Invalid credentials' });
+            return res.status(401).json({
+                success: false,
+                message: 'Incorrect password. Please try again.',
+                errorType: 'WRONG_PASSWORD'
+            });
         }
 
         if (!user.is_active) {
-            return res.status(401).json({ message: 'Account is inactive. Please contact support.' });
+            return res.status(401).json({
+                success: false,
+                message: 'Account is inactive. Please contact support.',
+                errorType: 'INACTIVE'
+            });
         }
 
         // Record Login
@@ -514,14 +531,206 @@ const updatePassword = async (req, res) => {
     }
 };
 
+// @desc    Firebase Phone OTP Login/Signup
+// @route   POST /api/v1/auth/firebase-login
+// @access  Public
+const firebaseLogin = async (req, res) => {
+    try {
+        const { idToken, name } = req.body;
+
+        if (!idToken) {
+            return res.status(400).json({
+                success: false,
+                message: 'Firebase ID token is required'
+            });
+        }
+
+        // Import Firebase verification utility
+        const { verifyIdToken } = require('../utils/firebase');
+
+        // Verify the Firebase ID token
+        const decoded = await verifyIdToken(idToken);
+
+        if (!decoded || !decoded.phone) {
+            return res.status(401).json({
+                success: false,
+                message: 'Invalid or expired token. Please try again.'
+            });
+        }
+
+        const phoneNumber = decoded.phone;
+
+        // Find existing user or create new one
+        let user = await User.findOne({ phone: phoneNumber });
+        let isNewUser = false;
+
+        if (!user) {
+            // New user - create account
+            if (!name || !name.trim()) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Name is required for new users',
+                    requiresName: true
+                });
+            }
+
+            // Generate placeholder email for schema compatibility
+            const placeholderEmail = `${phoneNumber.replace('+', '')}@user.mauli.com`;
+
+            user = await User.create({
+                phone: phoneNumber,
+                name: name.trim(),
+                email: placeholderEmail,
+                role: 'customer',
+                is_active: true,
+                is_phone_verified: true,
+                firebase_uid: decoded.uid
+            });
+
+            isNewUser = true;
+        } else {
+            // Existing user - update Firebase UID if not set
+            if (!user.firebase_uid) {
+                user.firebase_uid = decoded.uid;
+                await user.save();
+            }
+
+            // Check if user is active
+            if (!user.is_active) {
+                return res.status(401).json({
+                    success: false,
+                    message: 'Account is inactive. Please contact support.'
+                });
+            }
+        }
+
+        // Record Login
+        const ip = req.ip || req.connection.remoteAddress;
+        await user.recordLogin({ ip });
+
+        // Create Session
+        const session = await UserSession.create({
+            user_id: user._id,
+            start_at: new Date(),
+            ip: ip,
+            user_agent: req.headers['user-agent'],
+        });
+
+        // Generate JWT Tokens
+        const accessToken = authService.generateAccessToken(user);
+        const refreshToken = authService.generateRefreshToken(user);
+
+        res.status(isNewUser ? 201 : 200).json({
+            success: true,
+            message: isNewUser ? 'Account created successfully' : 'Login successful',
+            accessToken,
+            refreshToken,
+            user: {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                phone: user.phone,
+                role: user.role,
+                is_phone_verified: user.is_phone_verified
+            },
+            sessionId: session._id,
+            isNewUser
+        });
+
+    } catch (error) {
+        console.error('Firebase login error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server Error'
+        });
+    }
+};
+
+// @desc    Reset Password with OTP verification
+// @route   POST /api/v1/auth/reset-password-otp
+// @access  Public
+const resetPasswordOtp = async (req, res) => {
+    try {
+        const { phone, idToken, newPassword } = req.body;
+
+        if (!phone || !idToken || !newPassword) {
+            return res.status(400).json({
+                success: false,
+                message: 'Phone, Firebase token, and new password are required'
+            });
+        }
+
+        if (newPassword.length < 6) {
+            return res.status(400).json({
+                success: false,
+                message: 'Password must be at least 6 characters'
+            });
+        }
+
+        // Verify the Firebase ID token
+        const { verifyIdToken } = require('../utils/firebase');
+        const decoded = await verifyIdToken(idToken);
+
+        if (!decoded || !decoded.phone) {
+            return res.status(401).json({
+                success: false,
+                message: 'Invalid or expired token'
+            });
+        }
+
+        // Ensure the verified phone matches the requested phone
+        if (decoded.phone !== phone) {
+            return res.status(401).json({
+                success: false,
+                message: 'Phone number does not match verified token'
+            });
+        }
+
+        // Find user by phone
+        const user = await User.findOne({ phone });
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'No account found with this phone number'
+            });
+        }
+
+        // Hash new password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+        // Update user password
+        user.password_hash = hashedPassword;
+        user.is_phone_verified = true;
+        await user.save();
+
+        res.json({
+            success: true,
+            message: 'Password reset successful'
+        });
+
+    } catch (error) {
+        console.error('Reset password OTP error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server Error'
+        });
+    }
+};
+
 module.exports = {
     updateProfile,
     getProfile,
     logout,
     refresh,
-    // Password-based auth
+    // Password-based auth (kept for admin/legacy)
     login,
     register,
+    // Firebase phone OTP auth
+    firebaseLogin,
+    // OTP-based password reset
+    resetPasswordOtp,
     // Legacy endpoints
     signup,
     verifySignup,

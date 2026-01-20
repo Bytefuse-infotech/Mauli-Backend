@@ -89,14 +89,29 @@ const sendPushNotification = async (tokens, title, body, data = {}) => {
     });
 
     try {
+        // Generate unique message ID for deduplication
+        const messageId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+        // Include messageId in data for service worker deduplication
+        const enrichedData = {
+            ...stringData,
+            messageId,
+            title, // Include title/body in data too for service worker fallback
+            body
+        };
+
         const message = {
             notification: {
                 title,
                 body
             },
-            data: stringData,
+            data: enrichedData,
             // Web push specific configuration for PWA
             webpush: {
+                headers: {
+                    'Urgency': 'high',  // Critical for background delivery
+                    'TTL': '86400'      // 24 hour time-to-live
+                },
                 notification: {
                     title,
                     body,
@@ -104,7 +119,8 @@ const sendPushNotification = async (tokens, title, body, data = {}) => {
                     badge: '/assets/icons/icon-72x72.png',
                     vibrate: [200, 100, 200],
                     requireInteraction: false,
-                    tag: 'mauli-notification'
+                    tag: `mauli-${messageId}`, // Unique tag for deduplication
+                    renotify: true
                 },
                 fcm_options: {
                     link: stringData.url || stringData.path || '/'

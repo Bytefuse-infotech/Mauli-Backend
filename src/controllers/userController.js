@@ -46,16 +46,25 @@ const getUsers = async (req, res) => {
         const pageSize = 10;
         const page = Number(req.query.pageNumber) || Number(req.query.page) || 1;
 
-        const keyword = req.query.keyword ? {
-            name: {
-                $regex: req.query.keyword,
-                $options: 'i'
-            }
+        const searchTerm = req.query.q || req.query.keyword;
+        const keyword = searchTerm ? {
+            $or: [
+                { name: { $regex: searchTerm, $options: 'i' } },
+                { email: { $regex: searchTerm, $options: 'i' } },
+                { phone: { $regex: searchTerm, $options: 'i' } }
+            ]
         } : {};
 
         const filter = { ...keyword };
         if (req.query.role) filter.role = req.query.role;
-        if (req.query.is_active) filter.is_active = req.query.is_active === 'true';
+
+        // Handle direct is_active param or status param
+        if (req.query.is_active !== undefined) {
+            filter.is_active = req.query.is_active === 'true';
+        } else if (req.query.status) {
+            if (req.query.status === 'active') filter.is_active = true;
+            if (req.query.status === 'inactive') filter.is_active = false;
+        }
 
         const count = await User.countDocuments(filter);
 

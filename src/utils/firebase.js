@@ -101,10 +101,13 @@ const sendPushNotification = async (tokens, title, body, data = {}) => {
         };
 
         const message = {
-            notification: {
-                title,
-                body
-            },
+            // DO NOT include 'notification' field for web push!
+            // When 'notification' is present, FCM auto-displays it and bypasses
+            // the service worker's push event handler, causing unreliable
+            // background notification delivery.
+            // 
+            // Instead, send data-only messages and let the service worker
+            // handle display via showNotification() in the push event handler.
             data: enrichedData,
             // Web push specific configuration for PWA
             webpush: {
@@ -112,23 +115,18 @@ const sendPushNotification = async (tokens, title, body, data = {}) => {
                     'Urgency': 'high',  // Critical for background delivery
                     'TTL': '86400'      // 24 hour time-to-live
                 },
-                notification: {
-                    title,
-                    body,
-                    icon: '/assets/icons/icon-192x192.png',
-                    badge: '/assets/icons/icon-72x72.png',
-                    vibrate: [200, 100, 200],
-                    requireInteraction: false,
-                    tag: `mauli-${messageId}`, // Unique tag for deduplication
-                    renotify: true
-                },
+                // Note: We include notification here ONLY for webpush context
+                // This helps with webpush-specific delivery but the SW still handles display
                 fcm_options: {
                     link: stringData.url || stringData.path || '/'
                 }
             },
             // Android specific (for future mobile app)
             android: {
+                // For Android, we CAN include notification for system tray display
                 notification: {
+                    title,
+                    body,
                     icon: 'notification_icon',
                     color: '#38a169',
                     clickAction: 'FLUTTER_NOTIFICATION_CLICK'
@@ -137,6 +135,7 @@ const sendPushNotification = async (tokens, title, body, data = {}) => {
             },
             tokens: validTokens
         };
+
 
         const response = await firebaseAdmin.messaging().sendEachForMulticast(message);
 

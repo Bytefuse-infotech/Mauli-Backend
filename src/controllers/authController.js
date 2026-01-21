@@ -365,7 +365,7 @@ const register = async (req, res) => {
             if (email && isEmail(email)) {
                 userEmail = email.toLowerCase();
             } else {
-                userEmail = null;  // No placeholder - email is optional
+                userEmail = undefined;  // No placeholder - email is optional
             }
         }
 
@@ -686,7 +686,7 @@ const firebaseLogin = async (req, res) => {
             user = await User.create({
                 phone: phoneNumber,
                 name: name.trim(),
-                email: null,  // No placeholder - email is optional
+                email: undefined,  // No placeholder - email is optional
                 role: 'customer',
                 is_active: true,
                 is_phone_verified: true,

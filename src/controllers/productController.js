@@ -100,7 +100,11 @@ const listProducts = async (req, res) => {
 
         // Filter by active status (default to active for public)
         if (req.query.is_active !== undefined) {
-            filter.is_active = req.query.is_active === 'true';
+            // Support 'all' to show both active and inactive products (for admin panel)
+            if (req.query.is_active !== 'all') {
+                filter.is_active = req.query.is_active === 'true';
+            }
+            // When is_active=all, don't add any filter (shows all products)
         } else {
             filter.is_active = true; // Default to active products
         }
@@ -188,17 +192,13 @@ const updateProduct = async (req, res) => {
     }
 };
 
-// @desc    Delete (soft-delete) product
+// @desc    Delete product (hard delete - permanently removes from database)
 // @route   DELETE /api/v1/admin/products/:id
 // @access  Private/Admin
 const deleteProduct = async (req, res) => {
     try {
         const { id } = req.params;
-        const product = await Product.findByIdAndUpdate(
-            id,
-            { is_active: false },
-            { new: true }
-        ).lean();
+        const product = await Product.findByIdAndDelete(id);
 
         if (!product) {
             return res.status(404).json({
@@ -209,7 +209,7 @@ const deleteProduct = async (req, res) => {
 
         return res.json({
             success: true,
-            message: 'Product deactivated',
+            message: 'Product deleted permanently',
             data: product
         });
     } catch (err) {

@@ -30,12 +30,12 @@ const ProductSchema = new mongoose.Schema({
     units: {
         type: [String],
         enum: {
-            values: ['box', 'dozen'],
-            message: 'Units must contain only box and/or dozen'
+            values: ['box', 'dozen', 'bag', 'pieces'],
+            message: 'Units must contain only box, dozen, bag, and/or pieces'
         },
         validate: {
             validator: function (v) {
-                return Array.isArray(v) && v.length > 0 && v.length <= 2;
+                return Array.isArray(v) && v.length > 0 && v.length <= 4;
             },
             message: 'At least one unit must be selected'
         },
@@ -46,8 +46,8 @@ const ProductSchema = new mongoose.Schema({
     unit: {
         type: String,
         enum: {
-            values: ['box', 'dozen', 'both'],
-            message: 'Unit must be either box, dozen, or both'
+            values: ['box', 'dozen', 'both', 'bag', 'pieces'],
+            message: 'Unit must be either box, dozen, bag, pieces, or both'
         },
         default: null
     },

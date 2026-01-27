@@ -13,7 +13,7 @@ const CartItemSchema = new mongoose.Schema({
     },
     unit: {
         type: String,
-        enum: ['box', 'dozen'],
+        enum: ['box', 'dozen', 'bag', 'pieces'],
         required: true
     },
     price_at_add: {

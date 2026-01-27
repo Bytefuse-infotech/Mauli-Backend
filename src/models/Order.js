@@ -17,7 +17,7 @@ const OrderItemSchema = new mongoose.Schema({
     },
     unit: {
         type: String,
-        enum: ['box', 'dozen'],
+        enum: ['box', 'dozen', 'bag', 'pieces'],
         required: true
     },
     price: {

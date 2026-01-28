@@ -5,11 +5,14 @@ const uploadImage = (req, res) => {
 
     // Cloudinary automatically handles the upload via multer storage
     // req.file.path contains the Cloudinary URL
+    // req.file.filename contains the public_id for deletion
 
     res.status(200).json({
         success: true,
         url: req.file.path,
-        filename: req.file.filename
+        filename: req.file.filename,
+        public_id: req.file.filename, // For cloudinary deletion
+        originalname: req.file.originalname
     });
 };
 

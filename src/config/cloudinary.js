@@ -19,7 +19,22 @@ const storage = new CloudinaryStorage({
     },
 });
 
+// Specific storage for banner uploads with optimized settings
+const bannerStorage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'mauli-marketing/banners',
+        allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
+        transformation: [
+            { width: 1920, height: 600, crop: 'limit' }, // Desktop banner size
+            { quality: 'auto:best' },
+            { fetch_format: 'auto' }
+        ],
+    },
+});
+
 module.exports = {
     cloudinary,
     storage,
+    bannerStorage,
 };

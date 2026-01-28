@@ -1,9 +1,30 @@
 const mongoose = require('mongoose');
 
 const bannerSchema = new mongoose.Schema({
+    // Banner source type: 'builder', 'upload', or 'url'
+    source_type: {
+        type: String,
+        enum: ['builder', 'upload', 'url'],
+        default: 'upload'
+    },
+    // For uploaded or external URL banners
     image_url: {
         type: String,
-        required: [true, 'Please add an image URL']
+        required: function() {
+            return this.source_type === 'upload' || this.source_type === 'url';
+        }
+    },
+    // For banner builder banners (reference to BannerBuilder model)
+    banner_builder_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'BannerBuilder',
+        required: function() {
+            return this.source_type === 'builder';
+        }
+    },
+    // Cloudinary public_id for uploaded images (for deletion)
+    cloudinary_public_id: {
+        type: String
     },
     title: {
         type: String,

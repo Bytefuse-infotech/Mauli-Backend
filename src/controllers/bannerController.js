@@ -1,4 +1,6 @@
 const Banner = require('../models/Banner');
+const BannerBuilder = require('../models/BannerBuilder');
+const cloudinary = require('cloudinary').v2;
 
 // @desc    Get Visible Banners (Public)
 // @route   GET /api/v1/banners/visible
@@ -6,8 +8,13 @@ const Banner = require('../models/Banner');
 // @access  Public
 const getVisibleBanners = async (req, res) => {
     try {
-        // Fetch from DB
-        const banners = await Banner.findVisible().lean();
+        // Fetch from DB and populate banner builder if needed
+        const banners = await Banner.findVisible()
+            .populate({
+                path: 'banner_builder_id',
+                select: 'name canvas_data desktop_canvas_data mobile_canvas_data'
+            })
+            .lean();
 
         res.json({
             banners,
@@ -25,10 +32,24 @@ const getVisibleBanners = async (req, res) => {
 const createBanner = async (req, res) => {
     try {
         let {
-            image_url, title, subtitle, offer_text,
+            source_type, image_url, banner_builder_id, cloudinary_public_id,
+            title, subtitle, offer_text,
             percentage_off, amount_off, target_url,
             start_at, end_at, priority, is_active
         } = req.body;
+
+        // Validate source type requirements
+        if (!source_type) {
+            source_type = 'upload'; // Default to upload
+        }
+
+        if (source_type === 'builder' && !banner_builder_id) {
+            return res.status(400).json({ message: 'Banner builder ID is required for builder type banners' });
+        }
+
+        if ((source_type === 'upload' || source_type === 'url') && !image_url) {
+            return res.status(400).json({ message: 'Image URL is required for upload/URL type banners' });
+        }
 
         // Auto-generate offer_text if missing
         if (!offer_text) {
@@ -39,8 +60,8 @@ const createBanner = async (req, res) => {
             }
         }
 
-        const banner = await Banner.create({
-            image_url,
+        const bannerData = {
+            source_type,
             title,
             subtitle,
             offer_text,
@@ -51,7 +72,19 @@ const createBanner = async (req, res) => {
             end_at,
             priority,
             is_active
-        });
+        };
+
+        // Add source-specific fields
+        if (source_type === 'builder') {
+            bannerData.banner_builder_id = banner_builder_id;
+        } else {
+            bannerData.image_url = image_url;
+            if (cloudinary_public_id) {
+                bannerData.cloudinary_public_id = cloudinary_public_id;
+            }
+        }
+
+        const banner = await Banner.create(bannerData);
 
         res.status(201).json({ success: true, data: banner });
     } catch (error) {
@@ -75,6 +108,10 @@ const listBanners = async (req, res) => {
 
         const count = await Banner.countDocuments(query);
         const banners = await Banner.find(query)
+            .populate({
+                path: 'banner_builder_id',
+                select: 'name'
+            })
             .limit(pageSize)
             .skip(pageSize * (page - 1))
             .sort({ priority: -1, createdAt: -1 }) // Show highest priority first
@@ -95,7 +132,40 @@ const updateBanner = async (req, res) => {
         const banner = await Banner.findById(req.params.id);
 
         if (banner) {
-            banner.image_url = req.body.image_url || banner.image_url;
+            // Handle source type change
+            if (req.body.source_type && req.body.source_type !== banner.source_type) {
+                // If changing source type, validate required fields
+                banner.source_type = req.body.source_type;
+
+                if (req.body.source_type === 'builder') {
+                    if (!req.body.banner_builder_id) {
+                        return res.status(400).json({ message: 'Banner builder ID is required for builder type' });
+                    }
+                    banner.banner_builder_id = req.body.banner_builder_id;
+                    banner.image_url = undefined;
+                    banner.cloudinary_public_id = undefined;
+                } else {
+                    if (!req.body.image_url) {
+                        return res.status(400).json({ message: 'Image URL is required for upload/URL type' });
+                    }
+                    banner.image_url = req.body.image_url;
+                    banner.banner_builder_id = undefined;
+                    if (req.body.cloudinary_public_id) {
+                        banner.cloudinary_public_id = req.body.cloudinary_public_id;
+                    }
+                }
+            } else {
+                // Update source-specific fields without changing type
+                if (banner.source_type === 'builder' && req.body.banner_builder_id) {
+                    banner.banner_builder_id = req.body.banner_builder_id;
+                } else if (banner.source_type !== 'builder' && req.body.image_url) {
+                    banner.image_url = req.body.image_url;
+                    if (req.body.cloudinary_public_id) {
+                        banner.cloudinary_public_id = req.body.cloudinary_public_id;
+                    }
+                }
+            }
+
             banner.title = req.body.title || banner.title;
             banner.subtitle = req.body.subtitle || banner.subtitle;
             banner.target_url = req.body.target_url || banner.target_url;

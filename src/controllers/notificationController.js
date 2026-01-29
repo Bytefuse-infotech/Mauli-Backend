@@ -219,11 +219,87 @@ const broadcastNotification = async (req, res) => {
     }
 };
 
+// @desc    Get notification preferences
+// @route   GET /api/v1/notifications/preferences
+// @access  Private
+const getNotificationPreferences = async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+
+        // Return default if not set
+        const preferences = user.notification_preferences || {
+            order: true,
+            promo: true,
+            payment: true
+        };
+
+        res.status(200).json({
+            success: true,
+            data: preferences
+        });
+    } catch (error) {
+        console.error('Error fetching notification preferences:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server Error'
+        });
+    }
+};
+
+// @desc    Update notification preferences
+// @route   PUT /api/v1/notifications/preferences
+// @access  Private
+const updateNotificationPreferences = async (req, res) => {
+    try {
+        console.log('[DEBUG] request body:', req.body);
+        const { order, promo, payment } = req.body;
+
+        const user = await User.findById(req.user._id);
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        // Initialize if missing
+        if (!user.notification_preferences) {
+            user.notification_preferences = {};
+        }
+
+        // Update fields explicitly
+        let hasChanges = false;
+        if (order !== undefined) { user.notification_preferences.order = order; hasChanges = true; }
+        if (promo !== undefined) { user.notification_preferences.promo = promo; hasChanges = true; }
+        if (payment !== undefined) { user.notification_preferences.payment = payment; hasChanges = true; }
+
+        if (hasChanges) {
+            // Force Mongoose to recognize the change
+            user.markModified('notification_preferences');
+            await user.save();
+        }
+
+        console.log('[DEBUG] Saved preferences:', user.notification_preferences);
+
+        res.status(200).json({
+            success: true,
+            data: user.notification_preferences,
+            message: 'Preferences updated successfully'
+        });
+    } catch (error) {
+        console.error('Error updating notification preferences:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server Error'
+        });
+    }
+};
+
 module.exports = {
     getNotifications,
     markAsRead,
     markAllAsRead,
     deleteNotification,
     createNotification,
-    broadcastNotification
+    broadcastNotification,
+    getNotificationPreferences,
+    updateNotificationPreferences
 };

@@ -105,6 +105,12 @@ const userSchema = new mongoose.Schema({
         index: true,
         sparse: true
     },
+    // Notification Preferences
+    notification_preferences: {
+        order: { type: Boolean, default: true },
+        promo: { type: Boolean, default: true },
+        payment: { type: Boolean, default: true }
+    },
     // FCM tokens for push notifications (multiple devices per user)
     fcm_tokens: [{
         token: {

@@ -5,12 +5,16 @@ const {
     markAsRead,
     markAllAsRead,
     deleteNotification,
-    broadcastNotification
+    broadcastNotification,
+    getNotificationPreferences,
+    updateNotificationPreferences
 } = require('../controllers/notificationController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 router.use(protect);
 
+router.get('/preferences', getNotificationPreferences);
+router.put('/preferences', updateNotificationPreferences);
 router.post('/broadcast', authorize('admin'), broadcastNotification);
 router.get('/', getNotifications);
 router.put('/read-all', markAllAsRead);

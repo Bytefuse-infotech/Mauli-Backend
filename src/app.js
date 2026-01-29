@@ -3,6 +3,8 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const { errorHandler } = require('./middleware/errorHandler');
+const crawlerDetection = require('./middleware/crawlerDetection');
+const metaRoutes = require('./routes/metaRoutes');
 const routes = require('./routes');
 
 const app = express();
@@ -14,7 +16,19 @@ app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Routes
+// Crawler detection middleware
+app.use(crawlerDetection);
+
+// Meta tag routes for social media crawlers (must be before API routes)
+app.use((req, res, next) => {
+    // Only serve meta HTML to crawlers
+    if (req.isCrawler && req.path.startsWith('/product/')) {
+        return metaRoutes(req, res, next);
+    }
+    next();
+});
+
+// API Routes
 app.use('/api/v1', routes);
 
 // Base route for testing

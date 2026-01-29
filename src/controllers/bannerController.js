@@ -208,18 +208,12 @@ const updateBanner = async (req, res) => {
     }
 };
 
-// @desc    Delete Banner (Admin - Soft Delete)
-// @route   DELETE /api/v1/admin/banners/:id
-// @access  Private/Admin
 const deleteBanner = async (req, res) => {
     try {
-        const banner = await Banner.findById(req.params.id);
+        const banner = await Banner.findByIdAndDelete(req.params.id);
 
         if (banner) {
-            banner.is_active = false;
-            await banner.save();
-
-            res.json({ message: 'Banner removed (soft delete)' });
+            res.json({ message: 'Banner removed completely' });
         } else {
             res.status(404).json({ message: 'Banner not found' });
         }

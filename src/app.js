@@ -21,12 +21,15 @@ app.use(crawlerDetection);
 
 // Meta tag routes for social media crawlers (must be before API routes)
 app.use((req, res, next) => {
-    // Only serve meta HTML to crawlers
+    // Only serve meta HTML to crawlers on product routes
     if (req.isCrawler && req.path.startsWith('/product/')) {
-        return metaRoutes(req, res, next);
+        // Use the metaRoutes router
+        metaRoutes.handle(req, res, next);
+    } else {
+        next();
     }
-    next();
 });
+
 
 // API Routes
 app.use('/api/v1', routes);

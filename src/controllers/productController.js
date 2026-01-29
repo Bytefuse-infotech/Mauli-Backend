@@ -88,7 +88,7 @@ const getProduct = async (req, res) => {
 const listProducts = async (req, res) => {
     try {
         const page = Math.max(1, parseInt(req.query.page) || 1);
-        const page_size = Math.min(100, Math.max(10, parseInt(req.query.page_size) || 20));
+        const page_size = Math.min(1000, Math.max(10, parseInt(req.query.page_size) || 20));
         const skip = (page - 1) * page_size;
 
         const filter = {};
@@ -228,7 +228,7 @@ const getProductsByCategory = async (req, res) => {
     try {
         const { categoryId } = req.params;
         const page = Math.max(1, parseInt(req.query.page) || 1);
-        const page_size = Math.min(100, Math.max(10, parseInt(req.query.page_size) || 20));
+        const page_size = Math.min(1000, Math.max(10, parseInt(req.query.page_size) || 20));
         const skip = (page - 1) * page_size;
 
         const filter = {
